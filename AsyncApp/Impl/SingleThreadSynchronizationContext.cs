@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Xperitos.Common.AsyncApp
+namespace Xperitos.Common.AsyncApp.Impl
 {
     /// <summary>Provides a SynchronizationContext that's single-threaded.</summary>
     sealed class SingleThreadSynchronizationContext : SynchronizationContext

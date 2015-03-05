@@ -12,30 +12,39 @@ namespace Xperitos.Common.Utils
             return new SynchronizationContextScheduler(context);
         }
 
-        public static void Post(this SynchronizationContext context, Action action)
+        /// <summary>
+        /// Performs the action on the specified context and blocks the current thread until a result returns.
+        /// </summary>
+        public static T Send<T>(this SynchronizationContext context, Func<T> action)
         {
-            context.Post((o) => action(), null);
+            T result = default(T);
+            context.Send((o) => { result = action(); }, null);
+            return result;
         }
 
         /// <summary>
-        /// Run the specified function on the specified context and return a task for it.
+        /// Performs the action async on the specified context and returns a task.
         /// </summary>
-        public static Task<T> PostAsync<T>(this SynchronizationContext context, Func<Task<T>> action)
+        public static Task<T> SendAsync<T>(this SynchronizationContext context, Func<T> action)
         {
             var result = new TaskCompletionSource<T>();
             context.Post(
-                async (taskCompletion) => ((TaskCompletionSource<T>)taskCompletion).SetResult(await action()), 
+                (taskCompletion) => ((TaskCompletionSource<T>)taskCompletion).SetResult(action()),
                 result);
-
             return result.Task;
         }
 
         /// <summary>
-        /// Run the specified function on the specified context and return a task for it.
+        /// Performs the action async on the specified context and returns a task.
         /// </summary>
-        public static Task PostAsync(this SynchronizationContext context, Func<Task> action)
+        public static Task SendAsync(this SynchronizationContext context, Action action)
         {
-            return PostAsync(context, async () => {await action(); return true; });
+            return context.SendAsync(() => {action(); return true;});
+        }
+
+        public static void Post(this SynchronizationContext context, Action action)
+        {
+            context.Post((o) => action(), null);
         }
     }
 }

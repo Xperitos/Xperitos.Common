@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace Xperitos.Common.AsyncApp
 {
+    /// <summary>
+    /// An async service - adds a message loop and sync context.
+    /// </summary>
     public class AsyncService : ServiceBase, ISyncContextProvider
     {
         protected AsyncService()
@@ -31,7 +34,7 @@ namespace Xperitos.Common.AsyncApp
 
         protected sealed override void OnStart(string[] args)
         {
-            m_terminateServiceDisposable = MessageLoop.RunThread(OnInitializedInternal, OnTerminatedAsync);
+            m_terminateServiceDisposable = MessageLoop.CreateMessageLoopThread(OnInitializedInternal, OnTerminatedAsync);
         }
 
         protected sealed override void OnStop()
@@ -46,7 +49,7 @@ namespace Xperitos.Common.AsyncApp
         private void OnInitializedInternal()
         {
             // Initialize the sync context associated with this service.
-            SyncContext = MessageLoop.SyncContext;
+            SyncContext = MessageLoop.CurrentMessageLoop.SyncContext;
 
             OnInitialized();
         }

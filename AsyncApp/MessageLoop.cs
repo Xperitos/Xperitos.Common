@@ -3,110 +3,118 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
+using Xperitos.Common.AsyncApp.Impl;
 
 namespace Xperitos.Common.AsyncApp
 {
-    public static class MessageLoop
+    /// <summary>
+    /// Base class for a message loop.
+    /// </summary>
+    public abstract partial class MessageLoop : IDisposable, ISyncContextProvider
     {
-        /// <summary>
-        /// Current sync context for the current thread.
-        /// </summary>
-        public static SynchronizationContext SyncContext { get { return AsyncApplication.CurrentSyncContext; } }
-
-        /// <summary>
-        /// Use this function to start a message loop in a different thread.
-        /// </summary>
-        /// <param name="onStart">Action to run when loop starts (inside the message loop)</param>
-        /// <param name="onExitAsync">Action to run when loop terminates (inside the message loop). Should return an async task which completes when terminated</param>
-        /// <returns>Object when disposed, the message loop will initiate termination sequence</returns>
-        public static IDisposable RunThread(Action onStart = null, Func<Task> onExitAsync = null)
+        internal protected MessageLoop()
         {
-            var appInstance = new MessageLoopApp();
-
-            appInstance.SetOnExitAsync(onExitAsync);
-            if ( onStart != null )
-                appInstance.SetOnStart(() =>
-                                       {
-                                           onStart();
-                                           return true;
-                                       });
-
-            var thread = new Thread(appInstance.Run)
-                         {
-                             Name = "MessageLoop thread"
-                         };
-            var terminateDisposable = Disposable.Create(() =>
-                                                        {
-                                                            // Signal the application to quit.
-                                                            appInstance.Quit();
-
-                                                            // Wait for the thread to terminate.
-                                                            thread.Join();
-                                                        });
-
-            // Start running.
-            thread.Start();
-            return terminateDisposable;
+            m_syncContext = new SingleThreadSynchronizationContext();
         }
 
         /// <summary>
-        /// Use this function to start a message loop.
+        /// Return the SyncContext for the current thread.
         /// </summary>
-        /// <param name="onStart">Action to run when loop starts (inside the message loop) - it receives a disposable, when disposed it terminates the message loop</param>
-        /// <param name="onExitAsync">Action to run when loop terminates (inside the message loop). Should return an async task which completes when terminated</param>
-        public static void RunSync(Func<IDisposable, bool> onStart, Func<Task> onExitAsync = null)
+        public static MessageLoop CurrentMessageLoop 
         {
-            var appInstance = new MessageLoopApp();
-            var terminateDisposable = Disposable.Create(appInstance.Quit);
+            get
+            {
+                var result = m_currentMessageLoop.Value;
+                if (result == null)
+                    throw new InvalidOperationException("No message loop for current thread!");
+                return result;
+            } 
+        }
+        private static readonly ThreadLocal<MessageLoop> m_currentMessageLoop = new ThreadLocal<MessageLoop>();
 
-            appInstance.SetOnExitAsync(onExitAsync);
-            appInstance.SetOnStart(() => onStart(terminateDisposable));
-            appInstance.Run();
+        private readonly SingleThreadSynchronizationContext m_syncContext;
+        public SynchronizationContext SyncContext { get { return m_syncContext; } }
+        public static explicit operator SynchronizationContext(MessageLoop loop)
+        {
+            return loop.SyncContext;
         }
 
-        class MessageLoopApp : AsyncApplication
+        /// <summary>
+        /// Start pumping messages. Set synchronization context on the way (for async tasks / RX to work).
+        /// </summary>
+        public void Run()
         {
-            public void SetOnStart(Func<bool> onStart)
+            if (m_currentMessageLoop.Value != null)
+                throw new InvalidOperationException("Already running on current thread");
+
+            var prevCtx = SynchronizationContext.Current;
+
+            try
             {
-                m_onStart = onStart;
+                // Establish the new context
+                SynchronizationContext.SetSynchronizationContext(m_syncContext);
+
+                // Set scheduler.
+                m_currentMessageLoop.Value = this;
+
+                // Init stuff.
+                if (!OnInit())
+                    return;
+
+                // Start pumping.
+                m_syncContext.RunOnCurrentThread();
+            }
+            finally
+            {
+                m_currentMessageLoop.Value = null;
+                SynchronizationContext.SetSynchronizationContext(prevCtx);
+            }
+        }
+
+        private Task m_quitTask;
+
+        /// <summary>
+        /// Signal the message loop to terminate.
+        /// </summary>
+        public Task QuitAsync()
+        {
+            TaskCompletionSource<bool> completion;
+
+            lock (this)
+            {
+                if (m_quitTask != null)
+                    return m_quitTask;
+
+                completion = new TaskCompletionSource<bool>();
+                m_quitTask = completion.Task;
             }
 
-            public void SetOnExitAsync(Func<Task> onExit)
-            {
-                m_onExitAsync = onExit;
-            }
+            // Signal the loop to quit.
+            m_syncContext.Post((o) => OnExitAsync().ContinueWith(oo => { m_syncContext.Complete();completion.SetResult(true); }), null);
 
-            private Func<bool> m_onStart;
-            private Func<Task> m_onExitAsync;
+            return m_quitTask;
+        }
 
-            #region Overrides of AsyncApplication
+        /// <summary>
+        /// Initialization function.
+        /// </summary>
+        protected abstract bool OnInit();
 
-            protected override bool OnInit()
-            {
-                if ( m_onStart == null )
-                    return true;
+        /// <summary>
+        /// Called to cleanup.
+        /// </summary>
+        protected virtual Task OnExitAsync()
+        {
+            // Noop.
+            return Task.FromResult(true);
+        }
 
-                return m_onStart();
-            }
+        public void Dispose()
+        {
+            if (m_quitTask != null)
+                return;
 
-            protected override Task OnExitAsync()
-            {
-                if ( m_onExitAsync != null )
-                    return m_onExitAsync();
-
-                return Task.FromResult(true);
-            }
-
-            #endregion
-
-            #region Implementation of IDisposable
-
-            public void Dispose()
-            {
-                Quit();
-            }
-
-            #endregion
+            QuitAsync();
         }
     }
 }

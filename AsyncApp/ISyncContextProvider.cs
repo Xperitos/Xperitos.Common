@@ -1,5 +1,4 @@
-﻿using System.Reactive.Concurrency;
-using System.Threading;
+﻿using System.Threading;
 
 namespace Xperitos.Common.AsyncApp
 {
