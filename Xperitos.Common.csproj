@@ -56,7 +56,7 @@
     <Compile Include="AsyncApp\AsyncService.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="AsyncApp\ISyncContext.cs" />
+    <Compile Include="AsyncApp\ISyncContextProvider.cs" />
     <Compile Include="AsyncApp\MessageLoop.cs" />
     <Compile Include="AsyncApp\SingleThreadSynchronizationContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

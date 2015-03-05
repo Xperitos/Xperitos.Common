@@ -1,10 +1,11 @@
 ﻿using System;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Xperitos.Common.AsyncApp
 {
-    public class AsyncService : ServiceBase
+    public class AsyncService : ServiceBase, ISyncContextProvider
     {
         protected AsyncService()
         {
@@ -50,7 +51,7 @@ namespace Xperitos.Common.AsyncApp
             OnInitialized();
         }
 
-        public ISyncContext SyncContext { get; private set; }
+        public SynchronizationContext SyncContext { get; private set; }
 
         /// <summary>
         /// Called from the service thread - when stopped pumping messages.

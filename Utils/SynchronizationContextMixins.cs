@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,6 +7,11 @@ namespace Xperitos.Common.Utils
 {
     public static class SynchronizationContextMixins
     {
+        public static IScheduler GetScheduler(this SynchronizationContext context)
+        {
+            return new SynchronizationContextScheduler(context);
+        }
+
         public static void Post(this SynchronizationContext context, Action action)
         {
             context.Post((o) => action(), null);

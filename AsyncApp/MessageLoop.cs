@@ -9,14 +9,9 @@ namespace Xperitos.Common.AsyncApp
     public static class MessageLoop
     {
         /// <summary>
-        /// Current RX scheduler for the current thread.
-        /// </summary>
-        public static IScheduler Scheduler { get { return AsyncApplication.CurrentSyncContext.Scheduler; } }
-
-        /// <summary>
         /// Current sync context for the current thread.
         /// </summary>
-        public static ISyncContext SyncContext { get { return AsyncApplication.CurrentSyncContext; } }
+        public static SynchronizationContext SyncContext { get { return AsyncApplication.CurrentSyncContext; } }
 
         /// <summary>
         /// Use this function to start a message loop in a different thread.

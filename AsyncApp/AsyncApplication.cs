@@ -7,7 +7,7 @@ namespace Xperitos.Common.AsyncApp
     /// <summary>
     /// Derive to implement a message loop.
     /// </summary>
-    public abstract class AsyncApplication : ISyncContext
+    public abstract class AsyncApplication : ISyncContextProvider
     {
         protected AsyncApplication()
         {
@@ -16,16 +16,11 @@ namespace Xperitos.Common.AsyncApp
         }
 
         /// <summary>
-        /// Return the RX scheduler for the current thread.
+        /// Return the SyncContext for the current thread.
         /// </summary>
-        public static ISyncContext CurrentSyncContext { get { return m_currentSyncContext.Value; } }
+        public static SynchronizationContext CurrentSyncContext { get { return m_currentSyncContext.Value; } }
 
-        private static readonly ThreadLocal<ISyncContext> m_currentSyncContext = new ThreadLocal<ISyncContext>();
-
-        /// <summary>
-        /// The scheduler associated with THIS application instance.
-        /// </summary>
-        public IScheduler Scheduler { get { return m_syncContextScheduler; } }
+        private static readonly ThreadLocal<SynchronizationContext> m_currentSyncContext = new ThreadLocal<SynchronizationContext>();
 
         /// <summary>
         /// The sync context associated with THIS application instance.
@@ -46,7 +41,7 @@ namespace Xperitos.Common.AsyncApp
                 SynchronizationContext.SetSynchronizationContext(m_syncContext);
 
                 // Set scheduler.
-                m_currentSyncContext.Value = this;
+                m_currentSyncContext.Value = m_syncContext;
 
                 // Init stuff.
                 if (!OnInit())
