@@ -13,7 +13,7 @@ namespace Xperitos.Common.AsyncApp.Impl
             new BlockingCollection<KeyValuePair<SendOrPostCallback, object>>();
 
         /// <summary>The processing thread.</summary>
-        private readonly Thread m_thread = Thread.CurrentThread;
+        private Thread m_thread = null;
 
         /// <summary>Dispatches an asynchronous message to the synchronization context.</summary>
         /// <param name="d">The System.Threading.SendOrPostCallback delegate to call.</param>
@@ -54,6 +54,8 @@ namespace Xperitos.Common.AsyncApp.Impl
         /// <summary>Runs an loop to process all queued work items.</summary>
         public void RunOnCurrentThread()
         {
+            m_thread = Thread.CurrentThread;
+
             foreach (var workItem in m_queue.GetConsumingEnumerable())
                 workItem.Key(workItem.Value);
         }
