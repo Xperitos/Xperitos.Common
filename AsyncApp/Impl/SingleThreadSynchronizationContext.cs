@@ -2,11 +2,12 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using Splat;
 
 namespace Xperitos.Common.AsyncApp.Impl
 {
     /// <summary>Provides a SynchronizationContext that's single-threaded.</summary>
-    sealed class SingleThreadSynchronizationContext : SynchronizationContext
+    sealed class SingleThreadSynchronizationContext : SynchronizationContext, IEnableLogger
     {
         /// <summary>The queue of work items.</summary>
         private readonly BlockingCollection<KeyValuePair<SendOrPostCallback, object>> m_queue =
@@ -56,8 +57,16 @@ namespace Xperitos.Common.AsyncApp.Impl
         {
             m_thread = Thread.CurrentThread;
 
-            foreach (var workItem in m_queue.GetConsumingEnumerable())
-                workItem.Key(workItem.Value);
+            try
+            {
+                foreach (var workItem in m_queue.GetConsumingEnumerable())
+                    workItem.Key(workItem.Value);
+            }
+            catch (Exception e)
+            {
+                this.Log().DebugException("Unhandled exception!", e);
+                throw;
+            }
         }
 
         /// <summary>Notifies the context that no more work will arrive.</summary>
