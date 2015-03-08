@@ -20,7 +20,7 @@ namespace Xperitos.Common.AsyncApp
         /// <summary>
         /// Return the SyncContext for the current thread.
         /// </summary>
-        public static MessageLoop CurrentMessageLoop 
+        public static MessageLoop Current 
         {
             get
             {

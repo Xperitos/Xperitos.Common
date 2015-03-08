@@ -49,7 +49,7 @@ namespace Xperitos.Common.AsyncApp
         private void OnInitializedInternal()
         {
             // Initialize the sync context associated with this service.
-            SyncContext = MessageLoop.CurrentMessageLoop.SyncContext;
+            SyncContext = MessageLoop.Current.SyncContext;
 
             OnInitialized();
         }

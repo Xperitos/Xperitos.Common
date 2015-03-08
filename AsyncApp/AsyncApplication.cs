@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Reactive.Concurrency;
+using ReactiveUI;
+using Xperitos.Common.AsyncApp.Reactive;
 
 namespace Xperitos.Common.AsyncApp
 {
@@ -14,6 +16,7 @@ namespace Xperitos.Common.AsyncApp
                 throw new InvalidOperationException("An app object already exists!");
 
             Instance = this;
+            RxApp.MainThreadScheduler = new MessageLoopScheduler(this);
         }
 
         /// <summary>

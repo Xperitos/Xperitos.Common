@@ -21,7 +21,7 @@ namespace Xperitos.Common.AsyncApp.Impl
         private Func<bool> m_onStart;
         private Func<Task> m_onExitAsync;
 
-        #region Overrides of AsyncApplication
+        #region Overrides of MessageLoop
 
         protected override bool OnInit()
         {
