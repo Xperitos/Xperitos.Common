@@ -23,13 +23,13 @@ namespace Xperitos.Common.Utils
         }
 
         /// <summary>
-        /// Performs the action async on the specified context and returns a task.
+        /// Performs the action async on the specified context and immediately returns a task for it.
         /// </summary>
-        public static Task<T> SendAsync<T>(this SynchronizationContext context, Func<T> action)
+        public static Task<T> SendAsync<T>(this SynchronizationContext context, Func<Task<T>> action)
         {
             var result = new TaskCompletionSource<T>();
             context.Post(
-                (taskCompletion) => ((TaskCompletionSource<T>)taskCompletion).SetResult(action()),
+                async (taskCompletion) => ((TaskCompletionSource<T>)taskCompletion).SetResult(await action()),
                 result);
             return result.Task;
         }
@@ -39,7 +39,7 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static Task SendAsync(this SynchronizationContext context, Action action)
         {
-            return context.SendAsync(() => {action(); return true;});
+            return context.SendAsync(() => {action(); return Task.FromResult(true);});
         }
 
         public static void Post(this SynchronizationContext context, Action action)

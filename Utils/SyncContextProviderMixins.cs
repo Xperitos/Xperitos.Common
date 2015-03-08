@@ -23,7 +23,7 @@ namespace Xperitos.Common.Utils
         /// <summary>
         /// Performs the action async on the specified context and returns a task.
         /// </summary>
-        public static Task<T> SendAsync<T>(this ISyncContextProvider context, Func<T> action)
+        public static Task<T> SendAsync<T>(this ISyncContextProvider context, Func<Task<T>> action)
         {
             return SynchronizationContextMixins.SendAsync<T>(context.SyncContext, action);
         }
