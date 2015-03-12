@@ -7,7 +7,7 @@ namespace Xperitos.Common.Utils
         /// <summary>
         /// Return default value if the requested key wasn't found.
         /// </summary>
-        public static TValue GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dic, TKey key, TValue defaultValue = default(TValue))
+        public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dic, TKey key, TValue defaultValue = default(TValue))
         {
             TValue result;
             if (dic.TryGetValue(key, out result))
@@ -20,7 +20,7 @@ namespace Xperitos.Common.Utils
         /// Try to get a value from the dictionary in the target type.
         /// </summary>
         /// <returns>false if result is null or can't be converted (or not found)</returns>
-        public static bool TryGetValueAs<TKey, TValue, TTarget>(this Dictionary<TKey, TValue> dic, TKey key, out TTarget targetValue)
+        public static bool TryGetValueAs<TKey, TValue, TTarget>(this IDictionary<TKey, TValue> dic, TKey key, out TTarget targetValue)
             where TTarget : class
         {
             TValue midValue;
