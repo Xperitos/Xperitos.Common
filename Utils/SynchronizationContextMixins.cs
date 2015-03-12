@@ -29,7 +29,18 @@ namespace Xperitos.Common.Utils
         {
             var result = new TaskCompletionSource<T>();
             context.Post(
-                async (taskCompletion) => ((TaskCompletionSource<T>)taskCompletion).SetResult(await action()),
+                async (taskCompletion) =>
+                {
+                    var tcs = (TaskCompletionSource<T>)taskCompletion;
+                    try
+                    {
+                        tcs.SetResult(await action());
+                    }
+                    catch (Exception e)
+                    {
+                        tcs.SetException(e);
+                    }
+                },
                 result);
             return result.Task;
         }
