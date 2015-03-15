@@ -76,6 +76,7 @@
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Logging\DebugLogger.cs" />
     <Compile Include="Logging\FormattedLogger.cs" />
+    <Compile Include="Logging\RotatingLogFileLogger.cs" />
     <Compile Include="Utils\LocatorMixins.cs" />
     <Compile Include="Utils\ObservableMixins.cs" />
     <Compile Include="Utils\ReactiveCommandEx.cs" />
