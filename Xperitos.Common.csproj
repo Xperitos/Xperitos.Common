@@ -73,6 +73,7 @@
     <Compile Include="AsyncApp\MessageLoop.OnThread.cs" />
     <Compile Include="AsyncApp\Reactive\MessageLoopMixins.cs" />
     <Compile Include="AsyncApp\Reactive\MessageLoopScheduler.cs" />
+    <Compile Include="Logging\CombinedLogger.cs" />
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Logging\DebugLogger.cs" />
     <Compile Include="Logging\FormattedLogger.cs" />
