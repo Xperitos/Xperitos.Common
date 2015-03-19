@@ -84,6 +84,7 @@
     <Compile Include="Utils\RxObjectMixins.cs" />
     <Compile Include="Utils\RxPropertyChangedMixins.cs" />
     <Compile Include="Utils\SemaphoreSlimMixins.cs" />
+    <Compile Include="Utils\StreamMixins.cs" />
     <Compile Include="Utils\SyncContextProviderMixins.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\ArrayMixins.cs" />
