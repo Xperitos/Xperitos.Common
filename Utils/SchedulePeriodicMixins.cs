@@ -5,18 +5,34 @@ using System.Threading.Tasks;
 
 namespace Xperitos.Common.Utils
 {
-    public static class SchedulerMixins
+    [Flags]
+    public enum SchedulePeriodicOptions
+    {
+        /// <summary>
+        /// If set then the task will execute immediately.
+        /// </summary>
+        ExecuteNow = 1,
+
+        /// <summary>
+        /// When a task completes execution and it exceeds the time between executions, 
+        /// if set, it will run ASAP; if not set it will be scheduled in the next time it SHOULD run.
+        /// </summary>
+        RescheduleAsSoonAsPossible = 2
+    }
+
+    public static class SchedulePeriodicMixins
     {
         class AsyncPeriodicScheduler : IDisposable
         {
-            public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, bool scheduleImmediately)
+            public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
             {
                 m_scheduler = scheduler;
                 m_period = period;
                 m_asyncTask = asyncTask;
+                m_options = options;
 
                 // Do initial schedule.
-                if (scheduleImmediately)
+                if (options.HasFlag(SchedulePeriodicOptions.ExecuteNow))
                     ScheduleAction(scheduler.Now, true);
                 else
                     ScheduleAction(scheduler.Now + period);
@@ -25,6 +41,7 @@ namespace Xperitos.Common.Utils
             private readonly IScheduler m_scheduler;
             private readonly TimeSpan m_period;
             private readonly Func<CancellationToken, Task> m_asyncTask;
+            private readonly SchedulePeriodicOptions m_options;
 
             private void ScheduleAction(DateTimeOffset dueTime, bool forceSchedule = false)
             {
@@ -37,8 +54,16 @@ namespace Xperitos.Common.Utils
                     return;
                 }
 
-                while (dueTime < m_scheduler.Now)
-                    dueTime += m_period;
+                if (dueTime < m_scheduler.Now)
+                {
+                    if ( m_options.HasFlag(SchedulePeriodicOptions.RescheduleAsSoonAsPossible) )
+                        dueTime = m_scheduler.Now;
+                    else
+                    {
+                        while (dueTime < m_scheduler.Now)
+                            dueTime += m_period;
+                    }
+                }
 
                 m_lastSchedule = m_scheduler.Schedule(dueTime, () => RunAction(dueTime));
             }
@@ -84,9 +109,20 @@ namespace Xperitos.Common.Utils
         /// <summary>
         /// Perform a periodic timer for an async event. The next timer will not schedule until the task completes.
         /// </summary>
+        public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
+        {
+            if (options == null)
+                throw new ArgumentNullException("options");
+
+            return new AsyncPeriodicScheduler(scheduler, period, asyncTask, options);
+        }
+
+        /// <summary>
+        /// Perform a periodic timer for an async event. The next timer will not schedule until the task completes.
+        /// </summary>
         public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, bool scheduleImmediately = false)
         {
-            return new AsyncPeriodicScheduler(scheduler, period, asyncTask, scheduleImmediately);
+            return SchedulePeriodicAsync(scheduler, period, asyncTask, scheduleImmediately ? SchedulePeriodicOptions.ExecuteNow : 0);
         }
     }
 }

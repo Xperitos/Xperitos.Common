@@ -78,6 +78,8 @@
     <Compile Include="Logging\DebugLogger.cs" />
     <Compile Include="Logging\FormattedLogger.cs" />
     <Compile Include="Logging\RotatingLogFileLogger.cs" />
+    <Compile Include="Utils\DateTimeMixins.cs" />
+    <Compile Include="Utils\GroupOfMixins.cs" />
     <Compile Include="Utils\LocatorMixins.cs" />
     <Compile Include="Utils\ObservableMixins.cs" />
     <Compile Include="Utils\ReactiveCommandEx.cs" />
@@ -93,7 +95,7 @@
     <Compile Include="Utils\DisposableMixins.cs" />
     <Compile Include="Utils\ListMixins.cs" />
     <Compile Include="Utils\ObservableVariable.cs" />
-    <Compile Include="Utils\SchedulerMixins.cs" />
+    <Compile Include="Utils\SchedulePeriodicMixins.cs" />
     <Compile Include="Utils\SkipNextMixins.cs" />
     <Compile Include="Utils\StringMixins.cs" />
     <Compile Include="Utils\SynchronizationContextMixins.cs" />
