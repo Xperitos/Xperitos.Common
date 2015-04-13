@@ -71,5 +71,10 @@ namespace Xperitos.Common.AsyncApp.Impl
 
         /// <summary>Notifies the context that no more work will arrive.</summary>
         public void Complete() { m_queue.CompleteAdding(); }
+
+        /// <summary>
+        /// Returns the current queue length.
+        /// </summary>
+        public int QueueLength { get { return m_queue.Count; } }
     }
 }

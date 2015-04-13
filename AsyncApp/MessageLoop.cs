@@ -71,6 +71,11 @@ namespace Xperitos.Common.AsyncApp
             }
         }
 
+        /// <summary>
+        /// Return the current number of pending messages in the queue.
+        /// </summary>
+        public int CurrentMessageQueueLength { get { return m_syncContext.QueueLength; } }
+
         private Task m_quitTask;
 
         /// <summary>
