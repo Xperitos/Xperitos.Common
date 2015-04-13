@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Xperitos.Common.Logging
@@ -47,8 +48,15 @@ namespace Xperitos.Common.Logging
 
         protected override void WriteFormatted(DateTimeOffset msgTime, Splat.LogLevel logLevel, string formattedMsg)
         {
-            lock (m_writeLock)
-                m_logHelper.Write(formattedMsg);
+            try
+            {
+                lock (m_writeLock)
+                    m_logHelper.Write(formattedMsg);
+            }
+            catch (Exception)
+            {
+                Debug.WriteLine("Failed to write log message '{0}'", formattedMsg);
+            }
         }
 
         #endregion
