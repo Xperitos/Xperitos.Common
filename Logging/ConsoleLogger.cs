@@ -7,7 +7,7 @@ namespace Xperitos.Common.Logging
     /// </summary>
     public class ConsoleLogger : FormattedLogger
     {
-        protected override void WriteFormatted(string formattedMsg)
+        protected override void WriteFormatted(DateTimeOffset msgTime, Splat.LogLevel logLevel, string formattedMsg)
         {
             Console.Write(formattedMsg);
         }

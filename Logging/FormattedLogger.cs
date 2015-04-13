@@ -24,12 +24,13 @@ namespace Xperitos.Common.Logging
         {
             if ((int)logLevel < (int)Level) return;
 
-            string msg = String.Format("{0} [{1}]: {2}{3}", DateTimeOffset.UtcNow.ToString("s"), m_levelString[(int)logLevel], message, Environment.NewLine);
-            WriteFormatted(msg);
+            var now = DateTimeOffset.UtcNow;
+            string msg = String.Format("{0} [{1}]: {2}{3}", now.ToString("s"), m_levelString[(int)logLevel], message, Environment.NewLine);
+            WriteFormatted(now, logLevel, msg);
         }
 
         public LogLevel Level { get; set; }
 
-        protected abstract void WriteFormatted(string formattedMsg);
+        protected abstract void WriteFormatted(DateTimeOffset msgTime, LogLevel logLevel, string formattedMsg);
     }
 }
