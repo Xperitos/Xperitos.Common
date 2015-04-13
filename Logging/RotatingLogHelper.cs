@@ -11,7 +11,7 @@ namespace Xperitos.Common.Logging
     /// <remarks>NOT THREAD SAFE!!!</remarks>
     public class RotatingLogHelper
     {
-        public RotatingLogHelper(string logPath, string filenameBase, string logFileExt, int maxLogFiles, Func<RotatingLogHelper, bool> rotationPolicyFunc)
+        public RotatingLogHelper(string logPath, string filenameBase, string logFileExt, int maxLogFiles, Func<RotatingLogHelper, byte[], bool> rotationPolicyFunc)
         {
             m_logFileExt = logFileExt;
             m_maxLogFiles = maxLogFiles;
@@ -31,7 +31,7 @@ namespace Xperitos.Common.Logging
         }
 
         private readonly int m_maxLogFiles;
-        private readonly Func<RotatingLogHelper, bool> m_rotationPolicyFunc;
+        private readonly Func<RotatingLogHelper, byte[], bool> m_rotationPolicyFunc;
 
         private readonly DirectoryInfo m_logPath;
         private readonly string m_logFileExt;
@@ -41,29 +41,45 @@ namespace Xperitos.Common.Logging
         private long m_currentLogFileSize;
         private DateTimeOffset m_currentLogFileCreationTime;
 
+        /// <summary>
+        /// Write the specified message
+        /// </summary>
+        /// <param name="msg">String to write</param>
+        /// <param name="encoding">Encoding to use when writing the string. null means UTF8</param>
+        /// <returns>Return true if the log file was rotated after msg was written.</returns>
         public bool Write(string msg, Encoding encoding = null)
         {
             var msgBytes = (encoding ?? Encoding.UTF8).GetBytes(msg);
             return Write(msgBytes);
         }
 
+        /// <summary>
+        /// Write the specified message
+        /// </summary>
+        /// <param name="msgBytes">bytes to write</param>
+        /// <returns>Return true if the log file was rotated before msg was written.</returns>
         public bool Write(byte[] msgBytes)
         {
+            bool result = false;
+            if (m_rotationPolicyFunc(this, msgBytes))
+                result = RotateFile();
+
             using (var writer = new FileStream(m_logFilename, FileMode.Append, FileAccess.Write, FileShare.Read))
             {
                 writer.Write(msgBytes, 0, msgBytes.Length);
                 m_currentLogFileSize += msgBytes.Length;
             }
 
-            if (m_rotationPolicyFunc(this))
-                return RotateFile();
-
-            return false;
+            return result;
         }
 
         public long CurrentLogFileSize { get { return m_currentLogFileSize; } }
         public DateTimeOffset CurrentLogFileCreationTime { get { return m_currentLogFileCreationTime; } }
 
+        /// <summary>
+        /// Implicitly rotate the file. Return true if file was rotated.
+        /// </summary>
+        /// <returns></returns>
         public bool RotateFile()
         {
             var allLogs =

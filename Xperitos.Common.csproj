@@ -75,10 +75,13 @@
     <Compile Include="AsyncApp\Reactive\MessageLoopScheduler.cs" />
     <Compile Include="Logging\CombinedLogger.cs" />
     <Compile Include="Logging\ConsoleLogger.cs" />
+    <Compile Include="Logging\DailyLogFileLogger.cs" />
     <Compile Include="Logging\DebugLogger.cs" />
     <Compile Include="Logging\FormattedLogger.cs" />
     <Compile Include="Logging\RotatingLogFileLogger.cs" />
+    <Compile Include="Logging\RotatingLogFileLoggerBase.cs" />
     <Compile Include="Logging\RotatingLogHelper.cs" />
+    <Compile Include="Utils\TimeRoundingMixins.cs" />
     <Compile Include="Utils\DateTimeMixins.cs" />
     <Compile Include="Utils\GroupOfMixins.cs" />
     <Compile Include="Utils\LocatorMixins.cs" />
