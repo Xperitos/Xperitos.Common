@@ -15,8 +15,6 @@ namespace Xperitos.Common.Logging
         public DailyLogFileLogger(string filenameBase, int maxLogFiles = 10)
             : base(filenameBase, maxLogFiles)
         {
-            // Perform an initial rotation.
-            LogHelper.RotateFile();
         }
 
         protected override bool ShouldRotate(RotatingLogHelper helper, byte[] bytes)

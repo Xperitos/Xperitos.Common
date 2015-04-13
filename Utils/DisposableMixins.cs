@@ -8,9 +8,11 @@ namespace Xperitos.Common.Utils
         /// <summary>
         /// Linq friendly function to add a disposable to a composite disposable.
         /// </summary>
-        public static void ComposeDispose(this IDisposable disposable, CompositeDisposable compositeDisposable)
+        public static T ComposeDispose<T>(this T disposable, CompositeDisposable compositeDisposable)
+            where T : IDisposable
         {
             compositeDisposable.Add(disposable);
+            return disposable;
         }
     }
 }
