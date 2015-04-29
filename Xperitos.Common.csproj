@@ -82,7 +82,7 @@
     <Compile Include="Logging\RotatingLogFileLoggerBase.cs" />
     <Compile Include="Logging\RotatingLogHelper.cs" />
     <Compile Include="Utils\TimeRoundingMixins.cs" />
-    <Compile Include="Utils\DateTimeMixins.cs" />
+    <Compile Include="Utils\UnixTime.cs" />
     <Compile Include="Utils\GroupOfMixins.cs" />
     <Compile Include="Utils\LocatorMixins.cs" />
     <Compile Include="Utils\ObservableMixins.cs" />
