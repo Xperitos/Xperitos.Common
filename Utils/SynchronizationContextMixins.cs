@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,47 @@ namespace Xperitos.Common.Utils
         public static IScheduler GetScheduler(this SynchronizationContext context)
         {
             return new SynchronizationContextScheduler(context);
+        }
+
+        private class SynchronizeInvoke : ISynchronizeInvoke
+        {
+            public SynchronizeInvoke(SynchronizationContext ctx)
+            {
+                m_ctx = ctx;
+            }
+
+            private readonly SynchronizationContext m_ctx;
+
+            public IAsyncResult BeginInvoke(Delegate method, object[] args)
+            {
+                var task = m_ctx.SendAsync(() => Task.FromResult(method.DynamicInvoke(args)));
+                return task;
+            }
+
+            public object EndInvoke(IAsyncResult result)
+            {
+                var task = (Task<object>)result;
+                return task.Result;
+            }
+
+            public object Invoke(Delegate method, object[] args)
+            {
+                return m_ctx.Send(() => method.DynamicInvoke(args));
+            }
+
+            public bool InvokeRequired
+            {
+                get
+                {
+                    // No way of telling from the context if invoke is requred or not so default to true.
+                    return true;
+                }
+            }
+        }
+
+        public static ISynchronizeInvoke GetSynchronizeInvoke(this SynchronizationContext context)
+        {
+            return new SynchronizeInvoke(context);
         }
 
         /// <summary>
