@@ -7,7 +7,37 @@ namespace Xperitos.Common.Utils
         /// <summary>
         /// Convert the given date time offset to unit time in milliseconds.
         /// </summary>
+        public static long ToUnixTime(this DateTimeOffset time)
+        {
+            return (long)(time - Epoch).TotalSeconds;
+        }
+
+        /// <summary>
+        /// Convert the given date time offset to unit time in milliseconds.
+        /// </summary>
+        public static long ToUnixTime(this DateTime time)
+        {
+            return (long)(time - Epoch).TotalSeconds;
+        }
+
+        public static DateTimeOffset FromUnixTime(long time)
+        {
+            return Epoch.AddSeconds(time);
+        }
+
+
+        /// <summary>
+        /// Convert the given date time offset to unit time in milliseconds.
+        /// </summary>
         public static long ToUnixTimeMS(this DateTimeOffset time)
+        {
+            return (long)(time - Epoch).TotalMilliseconds;
+        }
+
+        /// <summary>
+        /// Convert the given date time offset to unit time in milliseconds.
+        /// </summary>
+        public static long ToUnixTimeMS(this DateTime time)
         {
             return (long)(time - Epoch).TotalMilliseconds;
         }
