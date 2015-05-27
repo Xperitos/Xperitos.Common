@@ -111,9 +111,6 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
         {
-            if (options == null)
-                throw new ArgumentNullException("options");
-
             return new AsyncPeriodicScheduler(scheduler, period, asyncTask, options);
         }
 
