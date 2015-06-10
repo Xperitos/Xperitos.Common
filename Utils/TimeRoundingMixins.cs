@@ -30,7 +30,7 @@ namespace Xperitos.Common.Logging
         /// </summary>
         public static DateTime Round(this DateTime date, TimeSpan span)
         {
-            return new DateTime(date.Ticks.Round(span));
+            return new DateTime(date.Ticks.Round(span), date.Kind);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Xperitos.Common.Logging
         /// </summary>
         public static DateTime Round(this DateTime date, TimeSpan span, TimeSpan grace)
         {
-            return new DateTime(date.Ticks.Round(span, grace));
+            return new DateTime(date.Ticks.Round(span, grace), date.Kind);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Xperitos.Common.Logging
         /// </summary>
         public static DateTime Floor(this DateTime date, TimeSpan span)
         {
-            return new DateTime(date.Ticks.Floor(span));
+            return new DateTime(date.Ticks.Floor(span), date.Kind);
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Xperitos.Common.Logging
         /// </summary>
         public static DateTime Ceil(this DateTime date, TimeSpan span)
         {
-            return new DateTime(date.Ticks.Ceil(span));
+            return new DateTime(date.Ticks.Ceil(span), date.Kind);
         }
 
 
