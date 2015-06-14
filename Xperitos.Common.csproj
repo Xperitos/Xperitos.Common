@@ -87,7 +87,7 @@
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\SchedulerTimerMixins.cs" />
     <Compile Include="Utils\TimeRoundingMixins.cs" />
-    <Compile Include="Utils\TimeZoneInfoMixins.cs" />
+    <Compile Include="Utils\TimeZoneUtils.cs" />
     <Compile Include="Utils\UnixTime.cs" />
     <Compile Include="Utils\GroupOfMixins.cs" />
     <Compile Include="Utils\LocatorMixins.cs" />

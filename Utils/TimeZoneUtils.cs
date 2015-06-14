@@ -10,7 +10,7 @@ namespace Xperitos.Common.Utils
     /// Convert time Windows TimeZoneInfo to/from IANA format.
     /// Implementation was based on http://stackoverflow.com/questions/17348807/how-to-translate-between-windows-and-iana-time-zones
     /// </summary>
-    public static class TimeZoneInfoMixins
+    public static class TimeZoneUtils
     {
         /// <summary>
         /// Convert Iana time zone string representation to TimeZoneInfo
@@ -18,7 +18,7 @@ namespace Xperitos.Common.Utils
         /// <param name="source"></param>
         /// <param name="ianaZoneId"></param>
         /// <returns></returns>
-        public static TimeZoneInfo FromIana(this TimeZoneInfo source, string ianaZoneId)
+        public static TimeZoneInfo FromIana(string ianaZoneId)
         {
             var utcZones = new[] { "Etc/UTC", "Etc/UCT", "Etc/GMT" };
             if (utcZones.Contains(ianaZoneId, StringComparer.Ordinal))
