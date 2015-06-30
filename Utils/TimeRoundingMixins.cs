@@ -1,6 +1,6 @@
 using System;
 
-namespace Xperitos.Common.Logging
+namespace Xperitos.Common.Utils
 {
     public static class TimeRoundingMixins
     {

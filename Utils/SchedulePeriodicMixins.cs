@@ -17,25 +17,36 @@ namespace Xperitos.Common.Utils
         /// When a task completes execution and it exceeds the time between executions, 
         /// if set, it will run ASAP; if not set it will be scheduled in the next time it SHOULD run.
         /// </summary>
-        RescheduleAsSoonAsPossible = 2
+        RescheduleAsSoonAsPossible = 2,
+
+        /// <summary>
+        /// When specified, an initial delay will be added to the current time to make sure the timer occurs on ROUND intervals (e.g. interval of 12 hours will occur at 12:00 and 00:00 ONLY).
+        /// </summary>
+        UseRoundIntervals = 4
     }
 
     public static class SchedulePeriodicMixins
     {
         class AsyncPeriodicScheduler : IDisposable
         {
-            public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
+            public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan initialDelay, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
             {
                 m_scheduler = scheduler;
                 m_period = period;
                 m_asyncTask = asyncTask;
                 m_options = options;
 
+                if (options.HasFlag(SchedulePeriodicOptions.UseRoundIntervals))
+                {
+                    var now = scheduler.Now;
+                    initialDelay = initialDelay + (now.Ceil(period) - now);
+                }
+
                 // Do initial schedule.
                 if (options.HasFlag(SchedulePeriodicOptions.ExecuteNow))
-                    ScheduleAction(scheduler.Now, true);
+                    ScheduleAction(scheduler.Now + initialDelay, true);
                 else
-                    ScheduleAction(scheduler.Now + period);
+                    ScheduleAction(scheduler.Now + period + initialDelay);
             }
 
             private readonly IScheduler m_scheduler;
@@ -108,10 +119,20 @@ namespace Xperitos.Common.Utils
 
         /// <summary>
         /// Perform a periodic timer for an async event. The next timer will not schedule until the task completes.
+        /// This overload waits an <paramref name="initialDelay"/> before scheduling the first iteration.
+        /// If delay was specified and <see cref="SchedulePeriodicOptions.ExecuteNow"/> was specified then it will wait the initial delay before running.
+        /// </summary>
+        public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan initialDelay, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
+        {
+            return new AsyncPeriodicScheduler(scheduler, initialDelay, period, asyncTask, options);
+        }
+
+        /// <summary>
+        /// Perform a periodic timer for an async event. The next timer will not schedule until the task completes.
         /// </summary>
         public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
         {
-            return new AsyncPeriodicScheduler(scheduler, period, asyncTask, options);
+            return SchedulePeriodicAsync(scheduler, TimeSpan.Zero, period, asyncTask, options);
         }
 
         /// <summary>
