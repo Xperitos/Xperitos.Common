@@ -14,14 +14,12 @@ namespace Xperitos.Common.Utils
         /// </summary>
         static public IObservable<IList<T>> Buffer<T>(this IObservable<T> observable, Func<IList<T>, bool> closingSelector)
         {
-            var refCounted = observable.Publish().RefCount();
-
-            var currentBuffer = new List<T>();
-
             return Observable.Create<IList<T>>(
                 observer =>
                 {
-                    return refCounted.Subscribe((v) =>
+                    var currentBuffer = new List<T>();
+
+                    return observable.Subscribe((v) =>
                     {
                         currentBuffer.Add(v);
                         if (closingSelector(currentBuffer))
