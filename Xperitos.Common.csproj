@@ -85,6 +85,7 @@
     <Compile Include="Logging\RotatingLogFileLoggerBase.cs" />
     <Compile Include="Logging\RotatingLogHelper.cs" />
     <Compile Include="Utils\FileUtils.cs" />
+    <Compile Include="Utils\ObservableBufferMixins.cs" />
     <Compile Include="Utils\SchedulerTimerMixins.cs" />
     <Compile Include="Utils\TimeRoundingMixins.cs" />
     <Compile Include="Utils\TimeZoneUtils.cs" />
