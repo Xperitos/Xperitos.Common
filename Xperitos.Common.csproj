@@ -84,6 +84,11 @@
     <Compile Include="Logging\RotatingLogFileLogger.cs" />
     <Compile Include="Logging\RotatingLogFileLoggerBase.cs" />
     <Compile Include="Logging\RotatingLogHelper.cs" />
+    <Compile Include="Streams\IDataStreamConsumer.cs" />
+    <Compile Include="Streams\IDataStreamConsumerProducer.cs" />
+    <Compile Include="Streams\IDataStreamProducer.cs" />
+    <Compile Include="Streams\ProducerConsumerBuffer.cs" />
+    <Compile Include="Streams\ReactiveSerialPort.cs" />
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\ObservableBufferMixins.cs" />
     <Compile Include="Utils\SchedulerTimerMixins.cs" />
