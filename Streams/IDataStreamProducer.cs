@@ -2,7 +2,7 @@ using System;
 
 namespace Xperitos.Common.Streams
 {
-    interface IDataStreamProducer : IDisposable
+    public interface IDataStreamProducer : IDisposable
     {
         /// <summary>
         /// Start producing data.

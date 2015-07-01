@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Xperitos.Common.Streams
 {
-    class ProducerConsumerBuffer
+    public class ProducerConsumerBuffer
     {
         public ProducerConsumerBuffer(int maxCapacity = 5 * 1024 * 1024)
         {
@@ -142,7 +142,7 @@ namespace Xperitos.Common.Streams
         }
     }
 
-    static class ProducerConsumerBufferMixins
+    public static class ProducerConsumerBufferMixins
     {
         /// <summary>
         /// Returns the entire <see cref="ProducerConsumerBuffer"/> buffer as string. Does not consume.

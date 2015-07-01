@@ -1,6 +1,6 @@
 namespace Xperitos.Common.Streams
 {
-    interface IDataStreamConsumer
+    public interface IDataStreamConsumer
     {
         /// <summary>
         /// Queue the data.

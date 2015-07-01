@@ -11,7 +11,7 @@ using Splat;
 
 namespace Xperitos.Common.Streams
 {
-    class ReactiveSerialPort : IEnableLogger, IDataStreamConsumerProducer
+    public class ReactiveSerialPort : IEnableLogger, IDataStreamConsumerProducer
     {
         public ReactiveSerialPort(string portName, int baudRate, Parity parity, int dataBits, StopBits stopBits)
         {
