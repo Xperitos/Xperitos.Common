@@ -29,17 +29,19 @@ namespace Xperitos.Common.Utils
     {
         class AsyncPeriodicScheduler : IDisposable
         {
-            public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan initialDelay, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
+            public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
             {
                 m_scheduler = scheduler;
                 m_period = period;
                 m_asyncTask = asyncTask;
                 m_options = options;
 
+                TimeSpan initialDelay = TimeSpan.Zero;
+
                 if (options.HasFlag(SchedulePeriodicOptions.UseRoundIntervals))
                 {
                     var now = scheduler.Now;
-                    initialDelay = initialDelay + (now.Ceil(period) - now);
+                    initialDelay = (now.Floor(period) - now);
                 }
 
                 // Do initial schedule.
@@ -119,20 +121,10 @@ namespace Xperitos.Common.Utils
 
         /// <summary>
         /// Perform a periodic timer for an async event. The next timer will not schedule until the task completes.
-        /// This overload waits an <paramref name="initialDelay"/> before scheduling the first iteration.
-        /// If delay was specified and <see cref="SchedulePeriodicOptions.ExecuteNow"/> was specified then it will wait the initial delay before running.
-        /// </summary>
-        public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan initialDelay, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
-        {
-            return new AsyncPeriodicScheduler(scheduler, initialDelay, period, asyncTask, options);
-        }
-
-        /// <summary>
-        /// Perform a periodic timer for an async event. The next timer will not schedule until the task completes.
         /// </summary>
         public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
         {
-            return SchedulePeriodicAsync(scheduler, TimeSpan.Zero, period, asyncTask, options);
+            return new AsyncPeriodicScheduler(scheduler, period, asyncTask, options);
         }
 
         /// <summary>
