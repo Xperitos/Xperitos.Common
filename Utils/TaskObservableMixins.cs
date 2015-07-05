@@ -12,7 +12,25 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static IObservable<T> Unwrap<T>(this IObservable<Task<T>> observable)
         {
-            return observable.SelectMany(v => TaskObservableExtensions.ToObservable<T>(v));
+            return observable.SelectMany(v => v.ToObservable());
+        }
+
+        /// <summary>
+        /// Same as <see cref="Observable.Select{TSource,TResult}(System.IObservable{TSource},System.Func{TSource,TResult})"/> but for an async function.
+        /// It automatically unwraps the task.
+        /// </summary>
+        public static IObservable<TResult> SelectAsync<TSource, TResult>(this IObservable<TSource> observable, Func<TSource, Task<TResult>> selector)
+        {
+            return observable.Select(selector).Unwrap();
+        }
+
+        /// <summary>
+        /// Same as <see cref="Observable.Select{TSource,TResult}(System.IObservable{TSource},System.Func{TSource,TResult})"/> but for an async function.
+        /// It automatically unwraps the task.
+        /// </summary>
+        public static IObservable<TResult> SelectAsync<TSource, TResult>(this IObservable<TSource> observable, Func<TSource, int, Task<TResult>> selector)
+        {
+            return observable.Select(selector).Unwrap();
         }
     }
 }
