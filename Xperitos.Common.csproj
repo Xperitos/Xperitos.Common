@@ -87,6 +87,7 @@
     <Compile Include="Streams\IDataStreamConsumer.cs" />
     <Compile Include="Streams\IDataStreamConsumerProducer.cs" />
     <Compile Include="Streams\IDataStreamProducer.cs" />
+    <Compile Include="Streams\NetworkStreamMixins.cs" />
     <Compile Include="Streams\ProducerConsumerBuffer.cs" />
     <Compile Include="Streams\ReactiveSerialPort.cs" />
     <Compile Include="Utils\FileUtils.cs" />
