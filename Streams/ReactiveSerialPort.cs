@@ -63,6 +63,7 @@ namespace Xperitos.Common.Streams
 
         /// <summary>
         /// Use this to obtain received data stream. Called from the serial port thread.
+        /// Errors are transmitted on this stream as well.
         /// </summary>
         public IObservable<byte> DataStream { get { return m_dataReceivedSubject; } }
 
@@ -86,9 +87,6 @@ namespace Xperitos.Common.Streams
 
                     cancellation.ThrowIfCancellationRequested();
                 } while (!m_serialPort.IsOpen);
-
-                // Alex suggests sending a byte after uart opened.
-                m_serialPort.Write(new byte[]{72}, 0, 1);
 
                 do
                 {
