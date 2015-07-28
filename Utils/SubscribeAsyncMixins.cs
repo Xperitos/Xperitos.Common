@@ -35,7 +35,7 @@ namespace Xperitos.Common.Utils
                 Action processPendingItems = async () =>
                 {
                     // Allow only ONE function to run async.
-                    using (await syncSemaphoreSlim.DoLockAsync())
+                    using (await syncSemaphoreSlim.LockAsync())
                     {
                         while (!cts.IsDisposed)
                         {
