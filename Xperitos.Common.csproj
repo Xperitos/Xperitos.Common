@@ -92,7 +92,9 @@
     <Compile Include="Streams\ReactiveSerialPort.cs" />
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\ObservableBufferMixins.cs" />
+    <Compile Include="Utils\SampleFirstMixins.cs" />
     <Compile Include="Utils\SchedulerTimerMixins.cs" />
+    <Compile Include="Utils\SubscribeAsyncMixins.cs" />
     <Compile Include="Utils\TaskObservableMixins.cs" />
     <Compile Include="Utils\TimeRoundingMixins.cs" />
     <Compile Include="Utils\TimeZoneUtils.cs" />
