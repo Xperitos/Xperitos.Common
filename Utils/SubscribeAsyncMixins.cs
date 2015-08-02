@@ -62,8 +62,17 @@ namespace Xperitos.Common.Utils
                                 item = pendingEvents.Dequeue();
                             }
 
-                            // Process the item!
-                            await action(item, cts.Token);
+                            try
+                            {
+                                // Process the item!
+                                await action(item, cts.Token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                // Catch cancelled exception (but only if it's ours).
+                                if (!cts.IsDisposed)
+                                    throw;
+                            }
                         }
                     }
                 };
