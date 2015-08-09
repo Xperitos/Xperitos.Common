@@ -92,6 +92,7 @@
     <Compile Include="Streams\ProducerConsumerBuffer.cs" />
     <Compile Include="Streams\ReactiveSerialPort.cs" />
     <Compile Include="Utils\FileUtils.cs" />
+    <Compile Include="Utils\NameFor.cs" />
     <Compile Include="Utils\ObservableBufferMixins.cs" />
     <Compile Include="Utils\SampleFirstMixins.cs" />
     <Compile Include="Utils\SchedulerTimerMixins.cs" />
