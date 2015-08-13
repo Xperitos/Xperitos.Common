@@ -25,7 +25,13 @@ namespace Xperitos.Common.AsyncApp.Impl
                 throw new ArgumentNullException("d");
 
             if (m_queue.IsCompleted)
+            {
+                // Queue is closed - log the error and run in-place.
+                // It's needed to prevent dead-locking when trying to queue task results while the process terminates.
+                this.Log().Error("Synchronization context terminated - running action in-place");
+                d(state);
                 return;
+            }
 
             m_queue.Add(new KeyValuePair<SendOrPostCallback, object>(d, state));
         }
@@ -64,6 +70,9 @@ namespace Xperitos.Common.AsyncApp.Impl
             }
             catch (Exception e)
             {
+                // Going down - prevent addition of items to the queue.
+                m_queue.CompleteAdding();
+
                 this.Log().DebugException("Unhandled exception!", e);
                 throw;
             }
