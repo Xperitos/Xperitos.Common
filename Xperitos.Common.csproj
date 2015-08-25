@@ -100,6 +100,7 @@
     <Compile Include="Utils\SubscribeAsyncMixins.cs" />
     <Compile Include="Utils\TaskObservableMixins.cs" />
     <Compile Include="Utils\TimeRoundingMixins.cs" />
+    <Compile Include="Utils\TimeSpanMixins.cs" />
     <Compile Include="Utils\TimeZoneUtils.cs" />
     <Compile Include="Utils\UnixTime.cs" />
     <Compile Include="Utils\GroupOfMixins.cs" />
