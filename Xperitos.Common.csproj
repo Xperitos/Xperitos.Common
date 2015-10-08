@@ -98,6 +98,7 @@
     <Compile Include="Utils\SampleFirstMixins.cs" />
     <Compile Include="Utils\SchedulerAwaitableMixins.cs" />
     <Compile Include="Utils\SchedulerTimerMixins.cs" />
+    <Compile Include="Utils\StartOfDateMixins.cs" />
     <Compile Include="Utils\SubscribeAsyncMixins.cs" />
     <Compile Include="Utils\TaskObservableMixins.cs" />
     <Compile Include="Utils\TimeRoundingMixins.cs" />
