@@ -10,7 +10,11 @@ namespace Xperitos.Common.Utils
     {
         public static string Property<TRet>(Expression<Func<T, TRet>> property)
         {
-            return RxObjectMixins.PropertyName(property);
+            var propExpr = property.Body as MemberExpression;
+            if (propExpr == null)
+                throw new ArgumentException("Property expression must be of the form 'x => x.SomeProperty'");
+
+            return propExpr.Member.Name;
         }
     }
 }

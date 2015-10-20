@@ -33,9 +33,6 @@
     <Reference Include="NodaTime">
       <HintPath>..\..\packages\NodaTime.1.3.1\lib\net35-Client\NodaTime.dll</HintPath>
     </Reference>
-    <Reference Include="ReactiveUI">
-      <HintPath>..\..\packages\reactiveui-core.6.4.0.1\lib\Net45\ReactiveUI.dll</HintPath>
-    </Reference>
     <Reference Include="Splat">
       <HintPath>..\..\packages\Splat.1.6.0\lib\Net45\Splat.dll</HintPath>
     </Reference>
@@ -91,7 +88,6 @@
     <Compile Include="Streams\NetworkStreamMixins.cs" />
     <Compile Include="Streams\ProducerConsumerBuffer.cs" />
     <Compile Include="Streams\ReactiveSerialPort.cs" />
-    <Compile Include="Utils\DisposableAsyncObject.cs" />
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\NameFor.cs" />
     <Compile Include="Utils\ObservableBufferMixins.cs" />
@@ -108,9 +104,6 @@
     <Compile Include="Utils\GroupOfMixins.cs" />
     <Compile Include="Utils\LocatorMixins.cs" />
     <Compile Include="Utils\ObservableMixins.cs" />
-    <Compile Include="Utils\ReactiveCommandEx.cs" />
-    <Compile Include="Utils\RxObjectMixins.cs" />
-    <Compile Include="Utils\RxPropertyChangedMixins.cs" />
     <Compile Include="Utils\SemaphoreSlimMixins.cs" />
     <Compile Include="Utils\StreamMixins.cs" />
     <Compile Include="Utils\SyncContextProviderMixins.cs" />

@@ -3,7 +3,6 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
-using ReactiveUI;
 using Xperitos.Common.AsyncApp.Reactive;
 using Xperitos.Common.Utils;
 
@@ -20,7 +19,6 @@ namespace Xperitos.Common.AsyncApp
                 throw new InvalidOperationException("An app object already exists!");
 
             Instance = this;
-            RxApp.MainThreadScheduler = new MessageLoopScheduler(this);
 
             Disposables = new CompositeDisposable();
 
