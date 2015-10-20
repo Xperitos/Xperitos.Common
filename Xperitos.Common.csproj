@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="JetBrains.Annotations, Version=9.2.0.0, Culture=neutral, PublicKeyToken=1010a0d8d6380325, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\JetBrains.Annotations.9.2.0\lib\net20\JetBrains.Annotations.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="NodaTime">
       <HintPath>..\..\packages\NodaTime.1.3.1\lib\net35-Client\NodaTime.dll</HintPath>
     </Reference>
@@ -88,6 +92,8 @@
     <Compile Include="Streams\NetworkStreamMixins.cs" />
     <Compile Include="Streams\ProducerConsumerBuffer.cs" />
     <Compile Include="Streams\ReactiveSerialPort.cs" />
+    <Compile Include="Utils\DisposableAsyncObject.cs" />
+    <Compile Include="Utils\DisposableAsyncObjectMixins.cs" />
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\NameFor.cs" />
     <Compile Include="Utils\ObservableBufferMixins.cs" />
