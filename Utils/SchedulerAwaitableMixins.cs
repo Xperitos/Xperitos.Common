@@ -16,7 +16,17 @@ namespace Xperitos.Common.Utils
         public static Task<T> ScheduleAwaitable<T>(this IScheduler scheduler, Func<T> action, CancellationToken ct = default(CancellationToken))
         {
             var tcs = new TaskCompletionSource<T>();
-            var disposable = scheduler.Schedule(() => tcs.SetResult(action()));
+            var disposable = scheduler.Schedule(() =>
+            {
+                try
+                {
+                    tcs.SetResult(action());
+                }
+                catch (Exception e)
+                {
+                    tcs.SetException(e);
+                }
+            });
 
             // Dispose the scheduled action when ct is cancelled.
             ct.Register(disposable.Dispose);
@@ -30,7 +40,17 @@ namespace Xperitos.Common.Utils
         public static Task<T> ScheduleAwaitable<T>(this IScheduler scheduler, Func<Task<T>> action, CancellationToken ct = default(CancellationToken))
         {
             var tcs = new TaskCompletionSource<T>();
-            var disposable = scheduler.Schedule(async () => tcs.SetResult(await action()));
+            var disposable = scheduler.Schedule(async () =>
+            {
+                try
+                {
+                    tcs.SetResult(await action());
+                }
+                catch (Exception e)
+                {
+                    tcs.SetException(e);
+                }
+            });
 
             // Dispose the scheduled action when ct is cancelled.
             ct.Register(disposable.Dispose);
