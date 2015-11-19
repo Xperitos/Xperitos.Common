@@ -93,7 +93,6 @@
     <Compile Include="Streams\ProducerConsumerBuffer.cs" />
     <Compile Include="Streams\ReactiveSerialPort.cs" />
     <Compile Include="Utils\DisposableAsyncObject.cs" />
-    <Compile Include="Utils\DisposableAsyncObjectMixins.cs" />
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\NameFor.cs" />
     <Compile Include="Utils\ObservableBufferMixins.cs" />

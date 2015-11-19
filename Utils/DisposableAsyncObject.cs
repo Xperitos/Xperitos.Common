@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,13 +54,27 @@ namespace Xperitos.Common.Utils
         public event PropertyChangedEventHandler PropertyChanged;
         public event PropertyChangingEventHandler PropertyChanging;
 
-        internal void RaisePropertyChanging(string propertyName)
+        private void RaisePropertyChanging(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-        internal void RaisePropertyChanged(string propertyName)
+        private void RaisePropertyChanged(string propertyName)
         {
             PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+        }
+
+        protected TRet RaiseAndSetIfChanged<TRet>(
+            ref TRet backingField,
+            TRet newValue,
+            [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<TRet>.Default.Equals(backingField, newValue))
+                return newValue;
+
+            RaisePropertyChanging(propertyName);
+            backingField = newValue;
+            RaisePropertyChanged(propertyName);
+            return newValue;
         }
     }
 }
