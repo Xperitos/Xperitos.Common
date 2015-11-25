@@ -65,5 +65,13 @@ namespace Xperitos.Common.Utils
             if (tzid == null) return null;
             return tzdbSource.CanonicalIdMap[tzid];
         }
+        public static DateTimeOffset ParseExactWithTimeZone(string input, string format, TimeZoneInfo timezone)
+        {
+            var parsedDateLocal = DateTimeOffset.ParseExact(input, format, System.Globalization.CultureInfo.InvariantCulture);
+            var tzOffset = timezone.GetUtcOffset(parsedDateLocal.DateTime);
+            var parsedDateTimeZone = new DateTimeOffset(parsedDateLocal.DateTime, tzOffset);
+            return parsedDateTimeZone;
+        }
+
     }
 }
