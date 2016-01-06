@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncApp\AsyncApplication.cs" />
+    <Compile Include="AsyncApp\AsyncMainApplication.cs" />
     <Compile Include="AsyncApp\AsyncService.cs">
       <SubType>Component</SubType>
     </Compile>
