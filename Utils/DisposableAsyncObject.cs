@@ -56,11 +56,11 @@ namespace Xperitos.Common.Utils
 
         private void RaisePropertyChanging(string propertyName)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
         }
         private void RaisePropertyChanged(string propertyName)
         {
-            PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         protected TRet RaiseAndSetIfChanged<TRet>(
