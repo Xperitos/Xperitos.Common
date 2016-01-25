@@ -78,6 +78,11 @@ namespace Xperitos.Common.Utils
             return TimeZoneInfo.ConvertTimeFromUtc(time, tzi);
         }
 
+        public static DateTimeOffset ConvertToLocal(this TimeZoneInfo tzi, DateTimeOffset time)
+        {
+            return TimeZoneInfo.ConvertTime(time, tzi);
+        }
+
         public static DateTime ConvertToUTC(this TimeZoneInfo tzi, DateTime time)
         {
             return TimeZoneInfo.ConvertTimeToUtc(time, tzi);
