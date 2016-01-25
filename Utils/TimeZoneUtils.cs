@@ -73,5 +73,14 @@ namespace Xperitos.Common.Utils
             return parsedDateTimeZone;
         }
 
+        public static DateTime ConvertToLocal(this TimeZoneInfo tzi, DateTime time)
+        {
+            return TimeZoneInfo.ConvertTimeFromUtc(time, tzi);
+        }
+
+        public static DateTime ConvertToUTC(this TimeZoneInfo tzi, DateTime time)
+        {
+            return TimeZoneInfo.ConvertTimeToUtc(time, tzi);
+        }
     }
 }
