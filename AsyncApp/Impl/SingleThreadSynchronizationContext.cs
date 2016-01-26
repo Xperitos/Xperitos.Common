@@ -85,5 +85,24 @@ namespace Xperitos.Common.AsyncApp.Impl
         /// Returns the current queue length.
         /// </summary>
         public int QueueLength { get { return m_queue.Count; } }
+
+        /// <summary>
+        /// The number of ongoing incomplete operations.
+        /// </summary>
+        public int RunningOperationsCount => m_runningOperationsCount;
+
+        private int m_runningOperationsCount;
+
+        public override void OperationStarted()
+        {
+            Interlocked.Increment(ref m_runningOperationsCount);
+            base.OperationStarted();
+        }
+
+        public override void OperationCompleted()
+        {
+            base.OperationCompleted();
+            Interlocked.Decrement(ref m_runningOperationsCount);
+        }
     }
 }

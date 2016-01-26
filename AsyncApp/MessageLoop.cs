@@ -39,6 +39,9 @@ namespace Xperitos.Common.AsyncApp
             return loop.SyncContext;
         }
 
+        public bool IsOperationRunning => m_syncContext.RunningOperationsCount > 0;
+        public int RunningOperationsCount => m_syncContext.RunningOperationsCount;
+
         /// <summary>
         /// Start pumping messages. Set synchronization context on the way (for async tasks / RX to work).
         /// </summary>
