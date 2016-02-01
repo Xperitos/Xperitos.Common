@@ -36,60 +36,60 @@ namespace Xperitos.Common.Utils
             if (scheduler == null)
                 scheduler = Scheduler.Default;
 
-            var cts = new CancellationDisposable();
-
             // Queue of items + sync object.
             var pendingEvents = new Queue<T>();
+            var countSemaphore = new SemaphoreSlim(0);
 
-            var syncSemaphoreSlim = new SemaphoreSlim(1);
+            var disposables = new CompositeDisposable();
 
-            observable.Subscribe(v =>
+            // Create the pump loop.
+            scheduler.ScheduleAsync(async (innerScheduler, ct) =>
             {
-                Action processPendingItems = async () =>
+                while (!ct.IsCancellationRequested)
                 {
-                    // Allow only ONE function to run async.
-                    using (await syncSemaphoreSlim.LockAsync())
+                    try
                     {
-                        while (!cts.IsDisposed)
-                        {
-                            // Dequeue inside the lock.
-                            T item;
-                            lock (pendingEvents)
-                            {
-                                if (pendingEvents.Count == 0)
-                                    return;
+                        T item;
 
-                                item = pendingEvents.Dequeue();
-                            }
+                        // Wait for item to become available.
+                        await countSemaphore.WaitAsync(ct);
+                        lock (pendingEvents)
+                            item = pendingEvents.Dequeue();
 
-                            try
-                            {
-                                // Process the item!
-                                await action(item, cts.Token);
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                // Catch cancelled exception (but only if it's ours).
-                                if (!cts.IsDisposed)
-                                    throw;
-                            }
-                        }
+                        // Perform the action.
+                        await action(item, ct);
                     }
-                };
+                    catch (OperationCanceledException)
+                    {
+                        // Catch cancelled exception (but only if it's ours).
+                        if (!ct.IsCancellationRequested)
+                            throw;
+                    }
 
-                // Enqueue.
-                lock (pendingEvents)
-                {
-                    if (pendingEvents.Count > maxPendingEvents)
-                        throw new OverflowException("Pending events exceed max allowed size");
-
-                    pendingEvents.Enqueue(v);
-
-                    scheduler.Schedule(processPendingItems);
+                    // Yield to the scheduler.
+                    await innerScheduler.Yield();
                 }
-            }, cts.Token);
+            }).ComposeDispose(disposables);
 
-            return cts;
+            // Subscribe to events.
+            observable
+                .Subscribe(
+                    v =>
+                    {
+                        lock (pendingEvents)
+                        {
+                            if (pendingEvents.Count > maxPendingEvents)
+                                throw new OverflowException("Pending events exceed max allowed size");
+
+                            pendingEvents.Enqueue(v);
+                            countSemaphore.Release();
+                        }
+                    }, 
+                    e => disposables.Dispose(), 
+                    () => disposables.Dispose())
+                .ComposeDispose(disposables);
+
+            return disposables;
         }
     }
 }
