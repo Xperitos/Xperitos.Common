@@ -25,7 +25,7 @@ using Serilog.Parsing;
 
 namespace Serilog.Sinks.Literate
 {
-    class LiterateConsoleSink : ILogEventSink
+    public class LiterateConsoleSink : ILogEventSink
     {
         const ConsoleColor Text = ConsoleColor.White,
                            Subtext = ConsoleColor.Gray,
@@ -109,7 +109,9 @@ namespace Serilog.Sinks.Literate
                                     RenderExceptionToken(propertyToken, outputProperties);
                                     break;
                                 default:
-                                    RenderOutputTemplatePropertyToken(propertyToken, outputProperties);
+                                    // Don't print template properties that don't exist.
+                                    if (outputProperties.ContainsKey(propertyToken.PropertyName))
+                                        RenderOutputTemplatePropertyToken(propertyToken, outputProperties);
                                     break;
                             }
                     }
