@@ -15,9 +15,11 @@
 // Initially taken from: https://github.com/serilog/serilog-sinks-literate/blob/c35f2c3457fbde487d743b83f8dc5cac908a3b8e/src/Serilog.Sinks.Literate/Sinks/Literate/LiterateConsoleSink.cs
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -73,14 +75,36 @@ namespace Serilog.Sinks.Literate
         readonly object _syncRoot = new object();
         readonly MessageTemplate _outputTemplate;
 
-        public LiterateConsoleSink(string outputTemplate, IFormatProvider formatProvider)
+        private readonly BlockingCollection<LogEvent> _asyncWritesCollection;
+
+        public LiterateConsoleSink(string outputTemplate, IFormatProvider formatProvider = null, bool asyncWrite = false)
         {
             if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
             _outputTemplate = new MessageTemplateParser().Parse(outputTemplate);
             _formatProvider = formatProvider;
+            if (asyncWrite)
+            {
+                _asyncWritesCollection = new BlockingCollection<LogEvent>();
+                var thr = new Thread(ProcessEventsProc) { IsBackground = true, Name = "Console Log Writer" };
+                thr.Start();
+            }
+        }
+
+        private void ProcessEventsProc()
+        {
+            foreach (var logEvent in _asyncWritesCollection.GetConsumingEnumerable())
+                EmitInternal(logEvent);
         }
 
         public void Emit(LogEvent logEvent)
+        {
+            if (_asyncWritesCollection != null)
+                _asyncWritesCollection.Add(logEvent);
+            else
+                EmitInternal(logEvent);
+        }
+
+        void EmitInternal(LogEvent logEvent)
         {
             if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
 
