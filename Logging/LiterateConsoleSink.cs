@@ -12,17 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Initially taken from: https://github.com/serilog/serilog-sinks-literate/blob/c35f2c3457fbde487d743b83f8dc5cac908a3b8e/src/Serilog.Sinks.Literate/Sinks/Literate/LiterateConsoleSink.cs
+
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 using Serilog.Parsing;
 
 namespace Serilog.Sinks.Literate
-{    
-    public class LiterateConsoleSink : ILogEventSink
+{
+    class LiterateConsoleSink : ILogEventSink
     {
         const ConsoleColor Text = ConsoleColor.White,
                            Subtext = ConsoleColor.Gray,
@@ -46,17 +49,14 @@ namespace Serilog.Sinks.Literate
 
         class LevelFormat
         {
-            readonly string _description;
-            readonly ConsoleColor _color;
-
             public LevelFormat(string description, ConsoleColor color)
             {
-                _description = description;
-                _color = color;
+                Description = description;
+                Color = color;
             }
 
-            public string Description { get { return _description; } }
-            public ConsoleColor Color { get { return _color; } }
+            public string Description { get; }
+            public ConsoleColor Color { get; }
         }
 
         readonly IDictionary<LogEventLevel, LevelFormat> _levels = new Dictionary<LogEventLevel, LevelFormat>
@@ -75,17 +75,17 @@ namespace Serilog.Sinks.Literate
 
         public LiterateConsoleSink(string outputTemplate, IFormatProvider formatProvider)
         {
-            if (outputTemplate == null) throw new ArgumentNullException("outputTemplate");
+            if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
             _outputTemplate = new MessageTemplateParser().Parse(outputTemplate);
             _formatProvider = formatProvider;
         }
 
         public void Emit(LogEvent logEvent)
         {
-            if (logEvent == null) throw new ArgumentNullException("logEvent");
+            if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
 
             var outputProperties = OutputProperties.GetOutputProperties(logEvent);
-            
+
             lock (_syncRoot)
             {
                 try
@@ -98,28 +98,29 @@ namespace Serilog.Sinks.Literate
                             RenderOutputTemplateTextToken(outputToken, outputProperties);
                         }
                         else switch (propertyToken.PropertyName)
-                        {
-                            case OutputProperties.LevelPropertyName:
-                                RenderLevelToken(logEvent.Level);
-                                break;
-                            case OutputProperties.MessagePropertyName:
-                                RenderMessageToken(logEvent);
-                                break;
-                            case OutputProperties.ExceptionPropertyName:
-                                RenderExceptionToken(propertyToken, outputProperties);
-                                break;
-                            default:
-                                if (outputProperties.ContainsKey(propertyToken.PropertyName))
-                                    RenderOutputTemplatePropertyToken(outputToken, outputProperties);
-                                break;
-                        }
+                            {
+                                case OutputProperties.LevelPropertyName:
+                                    RenderLevelToken(logEvent.Level);
+                                    break;
+                                case OutputProperties.MessagePropertyName:
+                                    RenderMessageToken(logEvent);
+                                    break;
+                                case OutputProperties.ExceptionPropertyName:
+                                    RenderExceptionToken(propertyToken, outputProperties);
+                                    break;
+                                default:
+                                    RenderOutputTemplatePropertyToken(propertyToken, outputProperties);
+                                    break;
+                            }
                     }
                 }
                 finally { Console.ResetColor(); }
             }
         }
 
-        void RenderExceptionToken(MessageTemplateToken outputToken, IReadOnlyDictionary<string, LogEventPropertyValue> outputProperties)
+        void RenderExceptionToken(
+            PropertyToken outputToken,
+            IReadOnlyDictionary<string, LogEventPropertyValue> outputProperties)
         {
             var sw = new StringWriter();
             outputToken.Render(outputProperties, sw, _formatProvider);
@@ -132,10 +133,39 @@ namespace Serilog.Sinks.Literate
             }
         }
 
-        void RenderOutputTemplatePropertyToken(MessageTemplateToken outputToken, IReadOnlyDictionary<string, LogEventPropertyValue> outputProperties)
+        void RenderOutputTemplatePropertyToken(
+            PropertyToken outputToken,
+            IReadOnlyDictionary<string, LogEventPropertyValue> outputProperties)
         {
             Console.ForegroundColor = Subtext;
-            outputToken.Render(outputProperties, Console.Out, _formatProvider);
+
+            // This code is shared with MessageTemplateFormatter in the core Serilog
+            // project. Its purpose is to modify the way tokens are formatted to
+            // use "output template" rather than "message template" rules.
+
+            // First variation from normal rendering - if a property is missing,
+            // don't render anything (message templates render the raw token here).
+            LogEventPropertyValue propertyValue;
+            if (!outputProperties.TryGetValue(outputToken.PropertyName, out propertyValue))
+                return;
+
+            // Second variation; if the value is a scalar string, use literal
+            // rendering and support some additional formats: 'u' for uppercase
+            // and 'w' for lowercase.
+            var sv = propertyValue as ScalarValue;
+            if (sv?.Value is string)
+            {
+                var overridden = new Dictionary<string, LogEventPropertyValue>
+                {
+                    { outputToken.PropertyName, new LiteralStringValue((string) sv.Value) }
+                };
+
+                outputToken.Render(overridden, Console.Out, _formatProvider);
+            }
+            else
+            {
+                outputToken.Render(outputProperties, Console.Out, _formatProvider);
+            }
         }
 
         void RenderLevelToken(LogEventLevel level)
@@ -156,7 +186,9 @@ namespace Serilog.Sinks.Literate
             Console.ResetColor();
         }
 
-        void RenderOutputTemplateTextToken(MessageTemplateToken outputToken, IReadOnlyDictionary<string, LogEventPropertyValue> outputProperties)
+        void RenderOutputTemplateTextToken(
+            MessageTemplateToken outputToken,
+            IReadOnlyDictionary<string, LogEventPropertyValue> outputProperties)
         {
             Console.ForegroundColor = Punctuation;
             outputToken.Render(outputProperties, Console.Out, _formatProvider);
@@ -184,6 +216,8 @@ namespace Serilog.Sinks.Literate
 
                             if (scalar.Value is string && messagePropertyToken.Format == null && messagePropertyToken.Alignment == null)
                                 Console.Write(scalar.Value);
+                            else if (scalar.Value is bool && messagePropertyToken.Format == null && messagePropertyToken.Alignment == null)
+                                Console.Write(scalar.Value.ToString().ToLowerInvariant());
                             else
                                 messagePropertyToken.Render(logEvent.Properties, Console.Out, _formatProvider);
                         }
@@ -299,13 +333,13 @@ namespace Serilog.Sinks.Literate
         {
             if (scalar.Value == null || scalar.Value is bool)
                 return KeywordSymbol;
-            
+
             if (scalar.Value is string)
                 return StringSymbol;
-            
-            if (scalar.Value.GetType().IsPrimitive || scalar.Value is decimal)
+
+            if (scalar.Value.GetType().GetTypeInfo().IsPrimitive || scalar.Value is decimal)
                 return NumericSymbol;
-            
+
             return OtherSymbol;
         }
     }
