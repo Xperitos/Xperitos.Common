@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Xperitos.Common.AsyncApp.Impl;
 
 namespace Xperitos.Common.AsyncApp
 {
@@ -19,32 +16,12 @@ namespace Xperitos.Common.AsyncApp
         /// <returns>Object when disposed, the message loop will initiate termination sequence</returns>
         public static IDisposable CreateMessageLoopThread(Action onStart = null, Func<Task> onExitAsync = null)
         {
-            var appInstance = new MessageLoopApp();
+            // Constructor usage for backwards compatibility with this function.
+            var messageLoop = new ThreadedMessageLoop(onStart, onExitAsync, false, "MessageLoop thread");
 
-            appInstance.SetOnExitAsync(onExitAsync);
-            if (onStart != null)
-                appInstance.SetOnStart(() =>
-                {
-                    onStart();
-                    return true;
-                });
-
-            var thread = new Thread(appInstance.Run)
-            {
-                Name = "MessageLoop thread"
-            };
-            var terminateDisposable = Disposable.Create(() =>
-            {
-                // Signal the application to quit.
-                appInstance.QuitAsync();
-
-                // Wait for the thread to terminate.
-                thread.Join();
-            });
-
-            // Start running.
-            thread.Start();
-            return terminateDisposable;
+            // Start running automatically.
+            messageLoop.Start();
+            return messageLoop;
         }
     }
 }

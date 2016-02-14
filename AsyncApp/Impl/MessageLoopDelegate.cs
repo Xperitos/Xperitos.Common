@@ -6,7 +6,7 @@ namespace Xperitos.Common.AsyncApp.Impl
     /// <summary>
     /// Implement a messge loop with init/terminate callbacks.
     /// </summary>
-    class MessageLoopApp : MessageLoop
+    class MessageLoopDelegate : MessageLoop
     {
         public void SetOnStart(Func<bool> onStart)
         {

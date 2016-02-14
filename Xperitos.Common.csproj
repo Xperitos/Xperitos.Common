@@ -81,11 +81,12 @@
     </Compile>
     <Compile Include="AsyncApp\ISyncContextProvider.cs" />
     <Compile Include="AsyncApp\MessageLoop.cs" />
-    <Compile Include="AsyncApp\Impl\MessageLoopApp.cs" />
+    <Compile Include="AsyncApp\Impl\MessageLoopDelegate.cs" />
     <Compile Include="AsyncApp\Impl\SingleThreadSynchronizationContext.cs" />
     <Compile Include="AsyncApp\MessageLoop.OnThread.cs" />
     <Compile Include="AsyncApp\Reactive\MessageLoopMixins.cs" />
     <Compile Include="AsyncApp\Reactive\MessageLoopScheduler.cs" />
+    <Compile Include="AsyncApp\ThreadedMessageLoop.cs" />
     <Compile Include="Collections\MultiMap.cs" />
     <Compile Include="Logging\LiterateConsoleSink.cs" />
     <Compile Include="Streams\IDataStreamConsumer.cs" />
