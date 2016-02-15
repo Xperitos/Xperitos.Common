@@ -45,39 +45,49 @@ namespace Xperitos.Common.AsyncApp
             if (m_instance == null)
                 throw new ObjectDisposedException(typeof(ThreadedMessageLoop).Name);
 
-            if (m_terminateDisposable != null)
+            if (m_thread != null)
                 throw new InvalidOperationException("Already started");
 
-            var thread = new Thread(m_instance.Run)
+            m_thread = new Thread(m_instance.Run)
             {
                 Name = m_threadName ?? "ThreadedMessageLoop thread",
                 IsBackground = m_isBackground
             };
 
-            m_terminateDisposable = Disposable.Create(() =>
-            {
-                // Signal the application to quit.
-                m_instance.QuitAsync();
-
-                // Wait for the thread to terminate.
-                thread.Join();
-            });
-
             // Start running.
-            thread.Start();
+            m_thread.Start();
+        }
+
+        /// <summary>
+        /// Ask the message loop to terminate.
+        /// </summary>
+        public Task StopAsync()
+        {
+            // Signal the application to quit.
+            return m_instance?.QuitAsync() ?? Task.FromResult(true);
+        }
+
+        /// <summary>
+        /// Wait for the message loop to terminate.
+        /// </summary>
+        public void Join()
+        {
+            m_thread?.Join();
         }
 
         private MessageLoopDelegate m_instance;
-        private IDisposable m_terminateDisposable;
+        private Thread m_thread;
 
+        /// <summary>
+        /// Terminate and dispose the message loop.
+        /// </summary>
+        /// <remarks>This function blocks until the message loop terminates</remarks>
         public void Dispose()
         {
-            if (m_terminateDisposable == null)
-                return;
-
-            m_terminateDisposable.Dispose();
-            m_terminateDisposable = null;
+            StopAsync();
+            Join();
             m_instance = null;
+            m_thread = null;
         }
 
         public SynchronizationContext SyncContext => m_instance.SyncContext;

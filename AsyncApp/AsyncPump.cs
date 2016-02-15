@@ -55,7 +55,7 @@ namespace Xperitos.Common.AsyncApp
                     newContext.RunOnCurrentThread();
 
                     // Force the task into completion state.
-                    return task.GetAwaiter().GetResult();
+                    return task.Result;
                 }
                 finally
                 {
