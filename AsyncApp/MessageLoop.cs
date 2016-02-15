@@ -80,6 +80,7 @@ namespace Xperitos.Common.AsyncApp
         public int CurrentMessageQueueLength { get { return m_syncContext.QueueLength; } }
 
         private Task m_quitTask;
+        private readonly object m_quitTaskLock = new object();
 
         /// <summary>
         /// Signal the message loop to terminate.
@@ -88,7 +89,8 @@ namespace Xperitos.Common.AsyncApp
         {
             TaskCompletionSource<bool> completion;
 
-            lock (this)
+            // Make sure only a single quit task exists.
+            lock (m_quitTaskLock)
             {
                 if (m_quitTask != null)
                     return m_quitTask;
