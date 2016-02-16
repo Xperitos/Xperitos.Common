@@ -72,16 +72,18 @@ namespace Serilog.Sinks.Literate
         };
 
         readonly IFormatProvider _formatProvider;
+        private readonly LogEventLevel _minLevel;
         readonly object _syncRoot = new object();
         readonly MessageTemplate _outputTemplate;
 
         private readonly BlockingCollection<LogEvent> _asyncWritesCollection;
 
-        public LiterateConsoleSink(string outputTemplate, IFormatProvider formatProvider = null, bool asyncWrite = false)
+        public LiterateConsoleSink(string outputTemplate, IFormatProvider formatProvider = null, LogEventLevel minLevel = LogEventLevel.Verbose, bool asyncWrite = false)
         {
             if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
             _outputTemplate = new MessageTemplateParser().Parse(outputTemplate);
             _formatProvider = formatProvider;
+            _minLevel = minLevel;
             if (asyncWrite)
             {
                 _asyncWritesCollection = new BlockingCollection<LogEvent>();
@@ -107,6 +109,8 @@ namespace Serilog.Sinks.Literate
         void EmitInternal(LogEvent logEvent)
         {
             if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
+            if (logEvent.Level < _minLevel)
+                return;
 
             var outputProperties = OutputProperties.GetOutputProperties(logEvent);
 
