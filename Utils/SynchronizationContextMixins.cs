@@ -24,7 +24,7 @@ namespace Xperitos.Common.Utils
 
             public IAsyncResult BeginInvoke(Delegate method, object[] args)
             {
-                var task = m_ctx.SendAsync(() => Task.FromResult(method.DynamicInvoke(args)));
+                var task = m_ctx.SendTaskAsync(() => Task.FromResult(method.DynamicInvoke(args)));
                 return task;
             }
 
