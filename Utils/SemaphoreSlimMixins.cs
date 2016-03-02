@@ -17,7 +17,7 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static async Task<IDisposable> LockAsync(this SemaphoreSlim sem)
         {
-            await sem.WaitAsync();
+            await sem.WaitAsync().ConfigureAwait(false);
             return Disposable.Create(() => sem.Release());
         }
 
@@ -31,7 +31,7 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static async Task<IDisposable> LockAsync(this SemaphoreSlim sem, CancellationToken ct)
         {
-            await sem.WaitAsync(ct);
+            await sem.WaitAsync(ct).ConfigureAwait(false);
             return Disposable.Create(() => sem.Release());
         }
     }

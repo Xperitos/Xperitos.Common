@@ -44,7 +44,7 @@ namespace Xperitos.Common.Utils
             {
                 try
                 {
-                    tcs.SetResult(await action());
+                    tcs.SetResult(await action().ConfigureAwait(false));
                 }
                 catch (Exception e)
                 {
@@ -63,7 +63,7 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static Task ScheduleAwaitable(this IScheduler scheduler, Func<Task> action, CancellationToken ct = default(CancellationToken))
         {
-            return ScheduleAwaitable(scheduler, async () => { await action(); return true; }, ct);
+            return ScheduleAwaitable(scheduler, async () => { await action().ConfigureAwait(false); return true; }, ct);
         }
 
         /// <summary>

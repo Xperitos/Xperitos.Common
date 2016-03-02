@@ -94,7 +94,7 @@ namespace Xperitos.Common.Utils
                     var tcs = (TaskCompletionSource<T>)taskCompletion;
                     try
                     {
-                        tcs.SetResult(await action());
+                        tcs.SetResult(await action().ConfigureAwait(false));
                     }
                     catch (Exception e)
                     {

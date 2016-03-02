@@ -13,7 +13,7 @@ namespace Xperitos.Common.Utils
         {
             using (var mem = new System.IO.MemoryStream())
             {
-                await stream.CopyToAsync(mem);
+                await stream.CopyToAsync(mem).ConfigureAwait(false);
                 var bytes = mem.ToArray();
                 return encoding.GetString(bytes);
             }
