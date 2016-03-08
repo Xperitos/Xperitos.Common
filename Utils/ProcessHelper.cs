@@ -87,9 +87,35 @@ namespace Xperitos.Common.Utils
         /// </summary>
         /// <param name="fileName">Process to run</param>
         /// <param name="args">Arguments for the process</param>
+        /// <param name="suppressConsoleOutput">When set to true, standard error and output are suppressed</param>
+        /// <param name="ct">Cancellation token. When cancelled, process will be killed!</param>
+        /// <returns>Task with process exit code</returns>
+        public static Task<int?> RunProcessAsync(string fileName, string args = null, bool suppressConsoleOutput = false, CancellationToken ct = default(CancellationToken))
+        {
+            return RunProcessInternalAsync(fileName, args, suppressConsoleOutput, ct);
+        }
+
+        /// <summary>
+        /// Run process and return the exit code (or null if cancelled before started running).
+        /// </summary>
+        /// <param name="fileName">Process to run</param>
+        /// <param name="args">Arguments for the process</param>
         /// <param name="ct">Cancellation token. When cancelled, process will be killed!</param>
         /// <returns>Task with process exit code</returns>
         public static Task<int?> RunProcessAsync(string fileName, string args = null, CancellationToken ct = default(CancellationToken))
+        {
+            return RunProcessInternalAsync(fileName, args, false, ct);
+        }
+
+        /// <summary>
+        /// Run process and return the exit code (or null if cancelled before started running).
+        /// </summary>
+        /// <param name="fileName">Process to run</param>
+        /// <param name="args">Arguments for the process</param>
+        /// <param name="suppressConsoleOutput">When set to true, standard error and output are suppressed</param>
+        /// <param name="ct">Cancellation token. When cancelled, process will be killed!</param>
+        /// <returns>Task with process exit code</returns>
+        private static Task<int?> RunProcessInternalAsync(string fileName, string args, bool suppressConsoleOutput, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
                 return Task.FromResult<int?>(null);
@@ -98,16 +124,24 @@ namespace Xperitos.Common.Utils
 
             Log.Logger.Debug("Running command {exeFile} with {args}", fileName, args);
 
+            var psi = new ProcessStartInfo()
+            {
+                UseShellExecute = false,
+                FileName = fileName,
+                Arguments = args ?? "",
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            if (suppressConsoleOutput)
+            {
+                psi.RedirectStandardError = true;
+                psi.RedirectStandardOutput = true;
+            }
+
             var process = new Process
             {
-                StartInfo =
-                {
-                    UseShellExecute = false,
-                    FileName = fileName,
-                    Arguments = args,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                },
-                EnableRaisingEvents = true,
+                StartInfo = psi,
+                EnableRaisingEvents = true
             };
 
             var registration = ct.Register(process.Kill);
