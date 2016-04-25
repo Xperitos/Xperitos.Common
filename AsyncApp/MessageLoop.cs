@@ -12,6 +12,12 @@ namespace Xperitos.Common.AsyncApp
     /// </summary>
     public abstract partial class MessageLoop : IDisposable, ISyncContextProvider
     {
+        /// <summary>
+        /// Time to give the message pump to terminate gracefully (all queued items to be executed).
+        /// </summary>
+        private static readonly TimeSpan TerminationTimeout = TimeSpan.FromSeconds(15);
+
+
         internal protected MessageLoop()
         {
             m_syncContext = new SingleThreadSynchronizationContext();
@@ -24,16 +30,17 @@ namespace Xperitos.Common.AsyncApp
         {
             get
             {
-                var result = m_currentMessageLoop.Value;
+                var result = CurrentMessageLoopTLS.Value;
                 if (result == null)
                     throw new InvalidOperationException("No message loop for current thread!");
                 return result;
             } 
         }
-        private static readonly ThreadLocal<MessageLoop> m_currentMessageLoop = new ThreadLocal<MessageLoop>();
+        private static readonly ThreadLocal<MessageLoop> CurrentMessageLoopTLS = new ThreadLocal<MessageLoop>();
 
         private readonly SingleThreadSynchronizationContext m_syncContext;
-        public SynchronizationContext SyncContext { get { return m_syncContext; } }
+        public SynchronizationContext SyncContext => m_syncContext;
+
         public static explicit operator SynchronizationContext(MessageLoop loop)
         {
             return loop.SyncContext;
@@ -47,8 +54,11 @@ namespace Xperitos.Common.AsyncApp
         /// </summary>
         public void Run()
         {
-            if (m_currentMessageLoop.Value != null)
+            if (CurrentMessageLoopTLS.Value != null)
                 throw new InvalidOperationException("Already running on current thread");
+
+            if (m_quitCancellationSource.IsCancellationRequested)
+                throw new InvalidOperationException("MessageLoop disposed");
 
             var prevCtx = SynchronizationContext.Current;
 
@@ -58,18 +68,40 @@ namespace Xperitos.Common.AsyncApp
                 SynchronizationContext.SetSynchronizationContext(m_syncContext);
 
                 // Set scheduler.
-                m_currentMessageLoop.Value = this;
+                CurrentMessageLoopTLS.Value = this;
 
                 // Init stuff.
                 if (!OnInit())
                     return;
 
                 // Start pumping.
-                m_syncContext.RunOnCurrentThread();
+                m_syncContext.RunOnCurrentThread(m_quitCancellationSource.Token);
+
+                //
+                // Shutdown sequence.
+                //
+
+                // Mark start time.
+                DateTimeOffset terminationStartTime = DateTimeOffset.Now;
+
+                // Schedule the "Exit" task execution.
+                m_syncContext.Post(async o => await OnExitAsync(), null);
+
+                // Pump all the pending messages or until the timeout was reached.
+                while (m_syncContext.QueueLength > 0)
+                {
+                    if (DateTimeOffset.Now - terminationStartTime >= TerminationTimeout)
+                        throw new TimeoutException($"MessageLoop termination process took too long. Pending queue items: {m_syncContext.QueueLength}");
+
+                    // Process an item.
+                    m_syncContext.ProcessSingleItem();
+                }
+
+                m_quitTaskSource.TrySetResult(true);
             }
             finally
             {
-                m_currentMessageLoop.Value = null;
+                CurrentMessageLoopTLS.Value = null;
                 SynchronizationContext.SetSynchronizationContext(prevCtx);
             }
         }
@@ -77,32 +109,18 @@ namespace Xperitos.Common.AsyncApp
         /// <summary>
         /// Return the current number of pending messages in the queue.
         /// </summary>
-        public int CurrentMessageQueueLength { get { return m_syncContext.QueueLength; } }
+        public int CurrentMessageQueueLength => m_syncContext.QueueLength;
 
-        private Task m_quitTask;
-        private readonly object m_quitTaskLock = new object();
+        private readonly CancellationTokenSource m_quitCancellationSource = new CancellationTokenSource();
+        private readonly TaskCompletionSource<bool> m_quitTaskSource = new TaskCompletionSource<bool>();
 
         /// <summary>
         /// Signal the message loop to terminate.
         /// </summary>
         public Task QuitAsync()
         {
-            TaskCompletionSource<bool> completion;
-
-            // Make sure only a single quit task exists.
-            lock (m_quitTaskLock)
-            {
-                if (m_quitTask != null)
-                    return m_quitTask;
-
-                completion = new TaskCompletionSource<bool>();
-                m_quitTask = completion.Task;
-            }
-
-            // Signal the loop to quit.
-            m_syncContext.Post((o) => OnExitAsync().ContinueWith(oo => { m_syncContext.Complete();completion.SetResult(true); }), null);
-
-            return m_quitTask;
+            m_quitCancellationSource.Cancel();
+            return m_quitTaskSource.Task;
         }
 
         /// <summary>
@@ -121,9 +139,6 @@ namespace Xperitos.Common.AsyncApp
 
         public void Dispose()
         {
-            if (m_quitTask != null)
-                return;
-
             QuitAsync();
         }
     }

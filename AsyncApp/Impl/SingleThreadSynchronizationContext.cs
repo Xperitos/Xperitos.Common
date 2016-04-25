@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Splat;
 
 namespace Xperitos.Common.AsyncApp.Impl
@@ -22,16 +23,7 @@ namespace Xperitos.Common.AsyncApp.Impl
         public override void Post(SendOrPostCallback d, object state)
         {
             if (d == null) 
-                throw new ArgumentNullException("d");
-
-            if (m_queue.IsCompleted)
-            {
-                // Queue is closed - log the error and run in-place.
-                // It's needed to prevent dead-locking when trying to queue task results while the process terminates.
-                this.Log().Error("Synchronization context terminated - running action in-place");
-                d(state);
-                return;
-            }
+                throw new ArgumentNullException(nameof(d));
 
             m_queue.Add(new KeyValuePair<SendOrPostCallback, object>(d, state));
         }
@@ -59,32 +51,49 @@ namespace Xperitos.Common.AsyncApp.Impl
         }
 
         /// <summary>Runs an loop to process all queued work items.</summary>
-        public void RunOnCurrentThread()
+        public void RunOnCurrentThread(CancellationToken ct = default(CancellationToken))
         {
+            if (m_thread != null)
+                throw new InvalidOperationException("Already running!");
+
             m_thread = Thread.CurrentThread;
 
             try
             {
-                foreach (var workItem in m_queue.GetConsumingEnumerable())
+                foreach (var workItem in m_queue.GetConsumingEnumerable(ct))
                     workItem.Key(workItem.Value);
+            }
+            catch (OperationCanceledException e)
+            {
+                // Ignore cancellation originating from our token.
+                if (!ct.IsCancellationRequested)
+                {
+                    this.Log().DebugException("Unhandled exception!", e);
+                    throw;
+                }
             }
             catch (Exception e)
             {
-                // Going down - prevent addition of items to the queue.
-                m_queue.CompleteAdding();
-
                 this.Log().DebugException("Unhandled exception!", e);
                 throw;
             }
+            finally
+            {
+                m_thread = null;
+            }
         }
 
-        /// <summary>Notifies the context that no more work will arrive.</summary>
-        public void Complete() { m_queue.CompleteAdding(); }
+        public void ProcessSingleItem()
+        {
+            KeyValuePair<SendOrPostCallback, object> item;
+            if (m_queue.TryTake(out item))
+                item.Key(item.Value);
+        }
 
         /// <summary>
         /// Returns the current queue length.
         /// </summary>
-        public int QueueLength { get { return m_queue.Count; } }
+        public int QueueLength => m_queue.Count;
 
         /// <summary>
         /// The number of ongoing incomplete operations.
