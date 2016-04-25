@@ -25,14 +25,18 @@ namespace Xperitos.Common.Utils
         public static Task ToTask(this CancellationToken waitForToken, CancellationToken ct)
         {
             TaskCompletionSource<bool> cts = new TaskCompletionSource<bool>();
-            var reg = waitForToken.Register(() => cts.SetResult(true));
-            var cancelReg = ct.Register(() => cts.SetCanceled());
-            return cts.Task.ContinueWith((v) =>
-            {
-                reg.Dispose();
-                cancelReg.Dispose();
-                return v;
-            }, ct);
+            var reg = waitForToken.Register(() => cts.TrySetResult(true));
+            var cancelReg = ct.Register(() => cts.TrySetCanceled());
+
+            // ReSharper disable once MethodSupportsCancellation
+            return cts
+                .Task
+                .ContinueWith((v) =>
+                {
+                    reg.Dispose();
+                    cancelReg.Dispose();
+                    return v;
+                });
         }
 
         /// <summary>
