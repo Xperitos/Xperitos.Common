@@ -50,6 +50,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
     </Reference>
@@ -90,6 +91,10 @@
     <Compile Include="AsyncApp\ThreadedMessageLoop.cs" />
     <Compile Include="Collections\MultiMap.cs" />
     <Compile Include="Logging\LiterateConsoleSink.cs" />
+    <Compile Include="Networking\NetworkAdapter.cs" />
+    <Compile Include="Networking\NetworkConfigurator.cs" />
+    <Compile Include="Networking\NetworkConnectionStatus.cs" />
+    <Compile Include="Networking\Pinger.cs" />
     <Compile Include="Streams\IDataStreamConsumer.cs" />
     <Compile Include="Streams\IDataStreamConsumerProducer.cs" />
     <Compile Include="Streams\IDataStreamProducer.cs" />
