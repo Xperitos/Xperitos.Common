@@ -34,7 +34,7 @@ namespace Xperitos.Common.Networking
         private static readonly IObservable<Tuple<string, NetworkConnectionStatus>> ConnectionStatusStream = Observable
             .Interval(TimeSpan.FromSeconds(5))
             .StartWith(0)
-            .SelectMany(v =>
+            .Select(v =>
             {
                 var results = new List<Tuple<string, NetworkConnectionStatus>>();
                 using (var networkConfigMng = new ManagementClass("Win32_NetworkAdapter"))
@@ -50,8 +50,9 @@ namespace Xperitos.Common.Networking
                 }
                 return results;
             })
-            .Publish()
-            .RefCount();
+            .Replay(1)
+            .RefCount()
+            .SelectMany(list => list);
 
         /// <summary>
         /// Observable for connection status changes.
