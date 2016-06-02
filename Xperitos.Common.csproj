@@ -91,6 +91,7 @@
     <Compile Include="AsyncApp\ThreadedMessageLoop.cs" />
     <Compile Include="Collections\MultiMap.cs" />
     <Compile Include="Logging\LiterateConsoleSink.cs" />
+    <Compile Include="Logging\RollingFileSink.cs" />
     <Compile Include="Networking\NetworkAdapter.cs" />
     <Compile Include="Networking\NetworkConfigurator.cs" />
     <Compile Include="Networking\NetworkConnectionStatus.cs" />
