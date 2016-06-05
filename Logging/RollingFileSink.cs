@@ -5,34 +5,13 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Serilog;
-using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
-using Serilog.Formatting.Display;
 using Serilog.Sinks.IOFile;
 
 namespace Xperitos.Common.Logging
 {
-    public static class RollingFileSinkMixins
-    {
-        public static LoggerConfiguration XpRollingFile(
-            this LoggerSinkConfiguration sinkConfiguration,
-            string pathFormat, 
-            LogEventLevel restrictedToMinimumLevel = LogEventLevel.Verbose,
-            string outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}",
-            IFormatProvider formatProvider = null, 
-            long? fileSizeLimitBytes = 100 * 1024 * 1024,
-            int? retainedFileCountLimit = 60)
-        {
-            MessageTemplateTextFormatter templateTextFormatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
-            RollingFileSink sink = new RollingFileSink(pathFormat, templateTextFormatter, fileSizeLimitBytes, retainedFileCountLimit);
-
-            return sinkConfiguration.Sink(sink, restrictedToMinimumLevel);
-        }
-    }
-
     /// <summary>
     /// Mimics the original RollingFileSink but adds the ability to rotate the log implicitly and upon startup.
     /// </summary>
@@ -180,7 +159,7 @@ namespace Xperitos.Common.Logging
             }
         }
 
-        private FileSink m_currentFile;
+        private SizedFileSink m_currentFile;
         private DateTime? m_nextCheckpoint;
         private bool m_isDisposed;
         private readonly object m_syncRoot = new object();
@@ -212,7 +191,7 @@ namespace Xperitos.Common.Logging
 
                 try
                 {
-                    m_currentFile = new FileSink(newFileName, m_textFormatter, m_fileSizeLimitBytes, m_encoding);
+                    m_currentFile = new SizedFileSink(newFileName, m_textFormatter, m_encoding);
                 }
                 catch (IOException ex)
                 {
@@ -252,6 +231,13 @@ namespace Xperitos.Common.Logging
             {
                 if (m_isDisposed)
                     throw new ObjectDisposedException("Object disposed");
+
+                // Close previous file if size reached.
+                if (m_currentFile != null && m_fileSizeLimitBytes.HasValue &&
+                    m_currentFile.EstimatedLength >= m_fileSizeLimitBytes.Value)
+                {
+                    CloseFile();
+                }
 
                 OpenFileIfNeeded(DateTime.Now);
 
