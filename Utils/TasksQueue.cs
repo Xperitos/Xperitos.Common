@@ -11,6 +11,7 @@ namespace Xperitos.Common.Utils
     /// <summary>
     /// A queue that performs the enqueued task one after another.
     /// </summary>
+    /// <remarks>Public functions are thread-safe</remarks>
     public class TasksQueue : IDisposable
     {
         public TasksQueue(SynchronizationContext ctx = null)
