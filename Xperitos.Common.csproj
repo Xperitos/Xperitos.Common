@@ -95,6 +95,8 @@
     <Compile Include="Logging\RollingFileSink.cs" />
     <Compile Include="Logging\RollingFileSinkMixins.cs" />
     <Compile Include="Logging\SizedFileSink.cs" />
+    <Compile Include="MathHelpers\Fraction.cs" />
+    <Compile Include="MathHelpers\MathUtils.cs" />
     <Compile Include="Networking\NetworkAdapter.cs" />
     <Compile Include="Networking\NetworkConfigurator.cs" />
     <Compile Include="Networking\NetworkConnectionStatus.cs" />
