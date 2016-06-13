@@ -168,14 +168,22 @@ namespace Xperitos.Common.Streams
 
         public void Dispose()
         {
+            try
+            {
+                // Try to dispose of the serial port regardless of anything.
+                m_serialPort.Dispose();
+            }
+            catch (Exception)
+            {
+                // Ignore errors.
+            }
+
             if ( m_thread == null )
                 return;
 
             m_cancellationToken.Cancel();
             m_thread.Join();
             m_thread = null;
-
-            m_serialPort.Dispose();
         }
 
         #endregion
