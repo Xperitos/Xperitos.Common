@@ -14,47 +14,64 @@ namespace Xperitos.Common.Networking
         {
             return Task.Run(() =>
             {
-                int timeout = 200;
-                Ping pingSender = new Ping();
-
-                bool hadSuccess = false;
-                for (int i = 0; i < echosToSend; i++)
+                try
                 {
-                    PingReply reply = pingSender.Send(host, timeout);
+                    int timeout = 200;
+                    Ping pingSender = new Ping();
 
-                    // If one echo fails then ping fails.
-                    if (reply?.Status == IPStatus.Success)
-                        hadSuccess = true;
-                    else
+                    bool hadSuccess = false;
+                    for (int i = 0; i < echosToSend; i++)
                     {
-                        if (failOnFirst)
-                            return false;
-                    }
-                }
+                        PingReply reply = pingSender.Send(host, timeout);
 
-                return hadSuccess;
+                        // If one echo fails then ping fails.
+                        if (reply?.Status == IPStatus.Success)
+                            hadSuccess = true;
+                        else
+                        {
+                            if (failOnFirst)
+                                return false;
+                        }
+                    }
+
+                    return hadSuccess;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
             });
         }
 
         /// <summary>
         /// Returns an average ping time.
         /// </summary>
-        public static Task<TimeSpan> PingTimeAverageAsync(string host, int echoNum)
+        public static Task<TimeSpan?> PingTimeAverageAsync(string host, int echoNum)
         {
-            return Task.Run(() =>
+            return Task.Run<TimeSpan?>(() =>
             {
-                long totalTime = 0;
-                int timeout = 120;
-                Ping pingSender = new Ping();
-
-                for (int i = 0; i < echoNum; i++)
+                try
                 {
-                    PingReply reply = pingSender.Send(host, timeout);
-                    if (reply.Status == IPStatus.Success)
-                        totalTime += reply.RoundtripTime;
-                }
+                    long totalTime = 0;
+                    int timeout = 120;
+                    Ping pingSender = new Ping();
 
-                return TimeSpan.FromMilliseconds(totalTime / (double)echoNum);
+                    for (int i = 0; i < echoNum; i++)
+                    {
+                        PingReply reply = pingSender.Send(host, timeout);
+                        if (reply.Status == IPStatus.Success)
+                            totalTime += reply.RoundtripTime;
+                    }
+
+                    if (totalTime == 0)
+                        return null;
+
+                    return TimeSpan.FromMilliseconds(totalTime / (double)echoNum);
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
             });
         }
     }
