@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Management;
 using Splat;
+using System.Collections.Generic;
 
 namespace Xperitos.Common.Networking
 {
@@ -46,9 +47,47 @@ namespace Xperitos.Common.Networking
                 using (var networkConfigMng = new ManagementClass("Win32_NetworkAdapter"))
                 using (var networkConfigs = networkConfigMng.GetInstances())
                 {
-                    var netAdapters = 
+                    var netAdapters =
                         networkConfigs.Cast<ManagementObject>()
                             .Where(o => (Convert.ToInt16(o["AdapterTypeID"])) == 0 && o["NetConnectionID"] != null)
+                            .Select((m) => new NetworkAdapter(m));
+
+                    if (predicate == null)
+                        adapters = netAdapters.ToArray();
+                    else
+                        adapters = netAdapters
+                            .Where(predicate)
+                            .ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHost.Default.DebugException("Failed to get list of adapters", ex);
+                adapters = new NetworkAdapter[0];
+            }
+
+            return adapters;
+        }
+
+        /// <summary>
+        /// Gets a list of all CoWan network adapters.
+        /// </summary>
+        /// <param name="predicate">Filter function when requesting the list</param>
+        /// <returns></returns>
+        public static NetworkAdapter[] GetCoWanNetworkAdapters(Func<NetworkAdapter, bool> predicate = null)
+        {
+            NetworkAdapter[] adapters;
+            try
+            { 
+                var adapterTypeIDs = new List<EAdapterTypeID>();
+                adapterTypeIDs.Add(EAdapterTypeID.CoWan);
+
+                using (var networkConfigMng = new ManagementClass("Win32_NetworkAdapter"))
+                using (var networkConfigs = networkConfigMng.GetInstances())
+                {
+                    var netAdapters = 
+                        networkConfigs.Cast<ManagementObject>()
+                            .Where(o => o["Caption"] != null && o["AdapterTypeID"] != null && adapterTypeIDs.Contains(((EAdapterTypeID)(Convert.ToInt16(o["AdapterTypeID"])))) )
                             .Select((m) => new NetworkAdapter(m));
 
                     if ( predicate == null )

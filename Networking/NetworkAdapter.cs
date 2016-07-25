@@ -9,6 +9,23 @@ using Splat;
 
 namespace Xperitos.Common.Networking
 {
+    public enum EAdapterTypeID
+    {
+        Ethernet_802_3 = 0,
+        Token_Ring_802_5 = 1,
+        FDDI = 2,
+        WAN = 3,
+        LocalTalk = 4,
+        Ethernet_using_DIX_header_format = 5,
+        ARCNET = 6,
+        ARCNET_878_2 = 7,
+        ATM = 8,
+        Wireless = 9,
+        Infrared_Wireless = 10,
+        Bpc = 11,
+        CoWan = 12,
+        _1394 = 13
+    }
     public class NetworkAdapter : IEnableLogger, IDisposable
     {
         internal NetworkAdapter(ManagementObject adapter)
@@ -141,6 +158,17 @@ namespace Xperitos.Common.Networking
         /// Display name for the adapter (as shown in network adapters)
         /// </summary>
         public string Name => (string)Adapter["NetConnectionID"];
+
+        /// <summary>
+        /// Short description of the object—a one-line string
+        /// </summary>
+        public string Caption => (string)Adapter["Caption"];
+
+        /// <summary>
+        /// Network medium in use. Returns the same information as the AdapterType property, except that the information is in the form of an integer.
+        /// Convert the returned int to enum. 
+        /// </summary>
+        public EAdapterTypeID AdapterTypeID => (EAdapterTypeID)Adapter["AdapterTypeID"];
 
         /// <summary>
         /// Obtain the Gateway for this adapter (if set).
