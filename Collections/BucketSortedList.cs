@@ -2,10 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Xperitos.Common.Utils;
 
 namespace Xperitos.Common.Collections
 {
@@ -64,6 +66,7 @@ namespace Xperitos.Common.Collections
     /// <summary>
     /// Similar to <see cref="SortedList{TKey,TValue}"/> but provides faster insertion and lookup by using buckets.
     /// </summary>
+    /// <remarks>Bucket sort order MUST BE IDENTICAL to the key sort order (e.g. Key is full date+time and bucket is just the day) other-wise an unexpected behavior will occur</remarks>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
     /// <typeparam name="TBucket"></typeparam>
@@ -73,6 +76,10 @@ namespace Xperitos.Common.Collections
     [Serializable]
     public class BucketSortedList<TKey, TValue, TBucket> : IDictionary<TKey, TValue>
     {
+        public BucketSortedList(Func<TKey, TBucket> bucketKeyFunc) : this(Bucketer.Create(bucketKeyFunc))
+        {
+        }
+
         public BucketSortedList(IBucketer<TKey, TBucket> bucketer)
         {
             m_bucketer = bucketer;
@@ -292,6 +299,20 @@ namespace Xperitos.Common.Collections
             return bucket;
         }
 
+        private SortedList<TKey, TValue> GetBucket(TKey key, out int countBefore)
+        {
+            var bucketKey = m_bucketer.GetBucketKey(key);
+            SortedList<TKey, TValue> bucket;
+            if (m_buckets.TryGetValue(bucketKey, out bucket))
+            {
+                countBefore = m_buckets.Values.TakeWhile(v => v != bucket).Sum(v => v.Count);
+                return bucket;
+            }
+
+            countBefore = 0;
+            return null;
+        }
+
         public void Add(TKey key, TValue value)
         {
             var bucket = GetBucket(key, true);
@@ -405,6 +426,69 @@ namespace Xperitos.Common.Collections
                     Count = Count + 1;
                 ++m_version;
             }
+        }
+
+        public KeyValuePair<TKey, TValue> GetAt(int index)
+        {
+            if (index < 0 || index >= Count)
+                throw new InvalidOperationException("Out of bounds");
+
+            foreach (var bucket in m_buckets.Values)
+            {
+                if (index < bucket.Count)
+                    return new KeyValuePair<TKey, TValue>(bucket.Keys[index], bucket.Values[index]);
+
+                index -= bucket.Count;
+            }
+
+            // Should never reach here.
+            throw new InvalidOperationException();
+        }
+
+        public void RemoveAt(int index)
+        {
+            if (index < 0 || index >= Count)
+                throw new InvalidOperationException("Out of bounds");
+
+            foreach (var bucket in m_buckets.Values)
+            {
+                if (index < bucket.Count)
+                {
+                    bucket.RemoveAt(index);
+                    Count -= 1;
+                    m_version++;
+                    return;
+                }
+
+                index -= bucket.Count;
+            }
+
+            // Should never reach here.
+            throw new InvalidOperationException();
+        }
+
+        public int BinarySearchIndexOf<TSubKey>(TSubKey key,
+            Func<TSubKey, TBucket> bucketSelector,
+            Func<TKey, TSubKey> subKeySelector)
+        {
+            var bucketKey = bucketSelector(key);
+            var bucketIdx = m_buckets.Keys.BinarySearchIndexOf(bucketKey, v => v);
+            if (bucketIdx < 0)
+                bucketIdx = ~bucketIdx;
+
+            var bucket = m_buckets.Values[bucketIdx];
+
+            var countBefore = m_buckets.Values.TakeWhile(v => v != bucket).Sum(v => v.Count);
+
+            var idx = bucket.Keys.BinarySearchIndexOf(key, subKeySelector);
+            if (idx < 0)
+            {
+                idx = ~idx;
+                idx += countBefore;
+                return ~idx;
+            }
+
+            return idx;
         }
 
         public ICollection<TKey> Keys { get; }
