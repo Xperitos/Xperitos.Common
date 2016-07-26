@@ -44,22 +44,47 @@ namespace Xperitos.Common.Collections
         TBucket GetBucketKey(TKey key);
     }
 
+    public interface IBucketable<out TBucket>
+    {
+        TBucket GetBucket();
+    }
+
     /// <summary>
     /// Factory for buckets.
     /// </summary>
     public static class Bucketer
     {
-        public static IBucketer<TKey, TValue> Create<TKey, TValue>(Func<TKey, TValue> func) => new BucketerFunc<TKey, TValue>(func);
+        public static IBucketer<TKey, TBucket> Create<TKey, TBucket>(Func<TKey, TBucket> func) => new BucketerFunc<TKey, TBucket>(func);
 
-        private class BucketerFunc<TKey, TValue> : IBucketer<TKey, TValue>
+        private class BucketerFunc<TKey, TBucket> : IBucketer<TKey, TBucket>
         {
-            public BucketerFunc(Func<TKey, TValue> func)
+            public BucketerFunc(Func<TKey, TBucket> func)
             {
                 m_func = func;
             }
 
-            private readonly Func<TKey, TValue> m_func;
-            public TValue GetBucketKey(TKey key) => m_func(key);
+            private readonly Func<TKey, TBucket> m_func;
+            public TBucket GetBucketKey(TKey key) => m_func(key);
+        }
+
+        [Serializable]
+        private class BucketerBucketable<TKey, TBucket> : IBucketer<TKey, TBucket>
+        {
+            public TBucket GetBucketKey(TKey key) => ((IBucketable<TBucket>)key).GetBucket();
+        }
+
+        [Serializable]
+        private class BucketerIdentity<TKey, TBucket> : IBucketer<TKey, TBucket>
+        {
+            public TBucket GetBucketKey(TKey key) => default(TBucket);
+        }
+
+        public static IBucketer<TKey, TBucket> Default<TKey, TBucket>()
+        {
+            if ( typeof(IBucketable<TBucket>).IsAssignableFrom(typeof(TKey)) )
+                return new BucketerBucketable<TKey, TBucket>();
+
+            return new BucketerIdentity<TKey, TBucket>();
         }
     }
 
@@ -74,8 +99,13 @@ namespace Xperitos.Common.Collections
     [DebuggerDisplay("Count = {Count}")]
     [ComVisible(false)]
     [Serializable]
-    public class BucketSortedList<TKey, TValue, TBucket> : IDictionary<TKey, TValue>
+    public class BucketSortedList<TKey, TValue, TBucket> : IDictionary<TKey, TValue>, IDictionary
     {
+        public BucketSortedList() : this(Bucketer.Default<TKey, TBucket>())
+        {
+            
+        }
+
         public BucketSortedList(Func<TKey, TBucket> bucketKeyFunc) : this(Bucketer.Create(bucketKeyFunc))
         {
         }
@@ -83,17 +113,106 @@ namespace Xperitos.Common.Collections
         public BucketSortedList(IBucketer<TKey, TBucket> bucketer)
         {
             m_bucketer = bucketer;
-            Keys = new KeyCollection(this);
-            Values = new ValueCollection(this);
+            m_keys = new KeyCollection(this);
+            m_values = new ValueCollection(this);
         }
 
         private readonly IBucketer<TKey, TBucket> m_bucketer;
         private readonly SortedList<TBucket, SortedList<TKey, TValue>> m_buckets = new SortedList<TBucket, SortedList<TKey, TValue>>();
         private long m_version;
 
+        [NonSerialized]
+        private readonly object m_syncRoot = new object();
+
+        private readonly KeyCollection m_keys;
+        private readonly ValueCollection m_values;
+
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             return new Enumerator(this);
+        }
+
+        void IDictionary.Remove(object key)
+        {
+            Remove((TKey)key);
+        }
+
+        object IDictionary.this[object key]
+        {
+            get { return this[(TKey) key]; }
+            set { this[(TKey) key] = (TValue) value; }
+        }
+
+        [Serializable]
+        private class DictionaryEnumerator : IDictionaryEnumerator
+        {
+            public DictionaryEnumerator(BucketSortedList<TKey, TValue, TBucket> list)
+            {
+                m_list = list;
+                m_version = list.m_version;
+
+                Reset();
+            }
+
+            private BucketSortedList<TKey, TValue, TBucket> m_list;
+            private readonly long m_version;
+
+            private SortedList<TKey, TValue> m_bucket;
+            private int m_bucketIndex;
+            private int m_index;
+
+            public void Dispose()
+            {
+                m_list = null;
+                m_bucket = null;
+            }
+
+            public bool MoveNext()
+            {
+                if (m_version != m_list.m_version)
+                    throw new InvalidOperationException("List changed");
+
+                while (m_bucket != null)
+                {
+                    ++m_index;
+                    if (m_index >= m_bucket.Count)
+                    {
+                        m_index = -1;
+                        ++m_bucketIndex;
+                        if (m_bucketIndex >= m_list.m_buckets.Count)
+                            m_bucket = null;
+                        else
+                            m_bucket = m_list.m_buckets.Values[m_bucketIndex];
+                    }
+                    else
+                    {
+                        Current = new KeyValuePair<TKey, TValue>(m_bucket.Keys[m_index], m_bucket.Values[m_index]);
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            public void Reset()
+            {
+                if (m_version != m_list.m_version)
+                    throw new InvalidOperationException("List changed");
+
+                m_index = -1;
+                m_bucketIndex = 0;
+                if (m_list.m_buckets.Count == 0)
+                    m_bucket = null;
+                else
+                    m_bucket = m_list.m_buckets.Values[m_bucketIndex];
+            }
+
+            public KeyValuePair<TKey, TValue> Current { get; private set; }
+
+            object IEnumerator.Current => Current;
+            public object Key => Current.Key;
+            public object Value => Current.Value;
+            public DictionaryEntry Entry => new DictionaryEntry(Key, Value);
         }
 
         [Serializable]
@@ -166,7 +285,7 @@ namespace Xperitos.Common.Collections
         }
 
         [Serializable]
-        private class KeyCollection : ICollection<TKey>
+        private class KeyCollection : ICollection<TKey>, ICollection
         {
             public KeyCollection(BucketSortedList<TKey, TValue, TBucket> list)
             {
@@ -217,12 +336,19 @@ namespace Xperitos.Common.Collections
                 throw new NotImplementedException();
             }
 
+            public void CopyTo(Array array, int index)
+            {
+                throw new NotImplementedException();
+            }
+
             public int Count => m_list.Count;
+            public object SyncRoot => m_list.m_syncRoot;
+            public bool IsSynchronized { get; } = false;
             public bool IsReadOnly { get; } = true;
         }
 
         [Serializable]
-        private class ValueCollection : ICollection<TValue>
+        private class ValueCollection : ICollection<TValue>, ICollection
         {
             public ValueCollection(BucketSortedList<TKey, TValue, TBucket> list)
             {
@@ -273,7 +399,14 @@ namespace Xperitos.Common.Collections
                 throw new NotImplementedException();
             }
 
+            public void CopyTo(Array array, int index)
+            {
+                throw new NotImplementedException();
+            }
+
             public int Count => m_list.Count;
+            public object SyncRoot => m_list.m_syncRoot;
+            public bool IsSynchronized { get; } = false;
             public bool IsReadOnly { get; } = true;
         }
 
@@ -326,11 +459,30 @@ namespace Xperitos.Common.Collections
             Add(item.Key, item.Value);
         }
 
+        bool IDictionary.Contains(object key)
+        {
+            var bucket = GetBucket((TKey)key);
+            if (bucket == null)
+                return false;
+
+            return bucket.ContainsKey((TKey) key);
+        }
+
+        void IDictionary.Add(object key, object value)
+        {
+            Add((TKey)key, (TValue)value);
+        }
+
         public void Clear()
         {
             ++m_version;
             m_buckets.Clear();
             Count = 0;
+        }
+
+        IDictionaryEnumerator IDictionary.GetEnumerator()
+        {
+            return new DictionaryEnumerator(this);
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
@@ -370,9 +522,19 @@ namespace Xperitos.Common.Collections
             return false;
         }
 
+        void ICollection.CopyTo(Array array, int index)
+        {
+            throw new NotImplementedException();
+        }
+
         public int Count { get; private set; }
 
+        object ICollection.SyncRoot => m_syncRoot;
+
+        bool ICollection.IsSynchronized { get; } = false;
+
         public bool IsReadOnly { get; } = false;
+        bool IDictionary.IsFixedSize { get; } = false;
 
         public bool ContainsKey(TKey key)
         {
@@ -491,7 +653,9 @@ namespace Xperitos.Common.Collections
             return idx;
         }
 
-        public ICollection<TKey> Keys { get; }
-        public ICollection<TValue> Values { get; }
+        public ICollection<TKey> Keys => m_keys;
+        ICollection IDictionary.Keys => m_keys;
+        public ICollection<TValue> Values => m_values;
+        ICollection IDictionary.Values => m_values;
     }
 }
