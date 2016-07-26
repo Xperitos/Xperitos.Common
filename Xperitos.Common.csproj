@@ -89,6 +89,7 @@
     <Compile Include="AsyncApp\Reactive\MessageLoopMixins.cs" />
     <Compile Include="AsyncApp\Reactive\MessageLoopScheduler.cs" />
     <Compile Include="AsyncApp\ThreadedMessageLoop.cs" />
+    <Compile Include="Collections\BucketSortedList.cs" />
     <Compile Include="Collections\MultiMap.cs" />
     <Compile Include="Logging\CountingTextWriter.cs" />
     <Compile Include="Logging\LiterateConsoleSink.cs" />
