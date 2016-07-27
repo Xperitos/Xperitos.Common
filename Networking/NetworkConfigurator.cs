@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Management;
-using Splat;
 using System.Collections.Generic;
+using Serilog;
 
 namespace Xperitos.Common.Networking
 {
@@ -27,7 +27,7 @@ namespace Xperitos.Common.Networking
                     renameParams["Password"] = null;
                     renameParams["UserName"] = null;
                     var result = (uint)computerSystem.InvokeMethod("Rename", renameParams, null)["returnValue"];
-                    LogHost.Default.Debug("WMI Rename: {0}", result);
+                    Log.Debug("WMI Rename: {0}", result);
 
                     return result == 0;
                 }
@@ -62,7 +62,7 @@ namespace Xperitos.Common.Networking
             }
             catch (Exception ex)
             {
-                LogHost.Default.DebugException("Failed to get list of adapters", ex);
+                Log.Debug(ex, "Failed to get list of adapters");
                 adapters = new NetworkAdapter[0];
             }
 
@@ -100,7 +100,7 @@ namespace Xperitos.Common.Networking
             }
             catch (Exception ex)
             {
-                LogHost.Default.DebugException("Failed to get list of adapters", ex);
+                Log.Debug(ex, "Failed to get list of adapters");
                 adapters = new NetworkAdapter[0];
             }
 

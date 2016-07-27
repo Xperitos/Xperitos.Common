@@ -5,6 +5,7 @@ using System.Linq;
 using System.Management;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using Serilog;
 using Splat;
 
 namespace Xperitos.Common.Networking
@@ -26,7 +27,7 @@ namespace Xperitos.Common.Networking
         CoWan = 12,
         _1394 = 13
     }
-    public class NetworkAdapter : IEnableLogger, IDisposable
+    public class NetworkAdapter : IDisposable
     {
         internal NetworkAdapter(ManagementObject adapter)
         {
@@ -223,7 +224,7 @@ namespace Xperitos.Common.Networking
                     }
 
                     var result = (uint)Conf.InvokeMethod("EnableStatic", newIP, null)["returnValue"];
-                    this.Log().Debug("WMI EnableStatic: {0}", result);
+                    Log.Debug("WMI EnableStatic: {0}", result);
 
                     if (result != 0 && result != 1 && result != 81)
                         return false;
@@ -237,7 +238,7 @@ namespace Xperitos.Common.Networking
                         newGateway["DefaultIPGateway"] = new[] {newGateway};
                         newGateway["GatewayCostMetric"] = new[] {1};
                         var result = (uint)Conf.InvokeMethod("SetGateways", newGateway, null)["returnValue"];
-                        this.Log().Debug("WMI SetGateways: {0}", result);
+                        Log.Debug("WMI SetGateways: {0}", result);
                         if (result != 0 && result != 1)
                             return false;
                     }
