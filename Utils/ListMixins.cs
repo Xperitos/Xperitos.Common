@@ -14,17 +14,17 @@ namespace Xperitos.Common.Utils
         public static Int32 BinarySearchIndexOf<TElem, TValue>(this IList<TElem> list, TValue value, Func<TElem, TValue> transformFunc, IComparer<TValue> comparer = null)
         {
             if (list == null)
-                throw new ArgumentNullException("list");
+                throw new ArgumentNullException(nameof(list));
 
             comparer = comparer ?? Comparer<TValue>.Default;
 
-            Int32 lower = 0;
-            Int32 upper = list.Count - 1;
+            var lower = 0;
+            var upper = list.Count - 1;
 
             while (lower <= upper)
             {
-                Int32 middle = lower + (upper - lower) / 2;
-                Int32 comparisonResult = comparer.Compare(value, transformFunc(list[middle]));
+                var middle = lower + (upper - lower) / 2;
+                var comparisonResult = comparer.Compare(value, transformFunc(list[middle]));
                 if (comparisonResult == 0)
                     return middle;
                 else if (comparisonResult < 0)

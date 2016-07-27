@@ -638,6 +638,10 @@ namespace Xperitos.Common.Collections
             if (bucketIdx < 0)
                 bucketIdx = ~bucketIdx;
 
+            // Nothing found!?
+            if (bucketIdx == m_buckets.Count)
+                return -1;
+
             var bucket = m_buckets.Values[bucketIdx];
 
             var countBefore = m_buckets.Values.TakeWhile(v => v != bucket).Sum(v => v.Count);
