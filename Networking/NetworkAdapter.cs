@@ -169,7 +169,7 @@ namespace Xperitos.Common.Networking
         /// Network medium in use. Returns the same information as the AdapterType property, except that the information is in the form of an integer.
         /// Convert the returned int to enum. 
         /// </summary>
-        public EAdapterTypeID AdapterTypeID => (EAdapterTypeID)Adapter["AdapterTypeID"];
+        public EAdapterTypeID AdapterTypeID => (EAdapterTypeID)(Convert.ToInt16(Adapter["AdapterTypeId"]));
 
         /// <summary>
         /// Obtain the Gateway for this adapter (if set).
