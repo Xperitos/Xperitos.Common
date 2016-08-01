@@ -122,6 +122,7 @@
     <Compile Include="Utils\SubscribeAsyncMixins.cs" />
     <Compile Include="Utils\TaskObservableMixins.cs" />
     <Compile Include="Utils\TasksQueue.cs" />
+    <Compile Include="Utils\TimeRange.cs" />
     <Compile Include="Utils\TimeRoundingMixins.cs" />
     <Compile Include="Utils\TimeSpanMixins.cs" />
     <Compile Include="Utils\TimeZoneUtils.cs" />
