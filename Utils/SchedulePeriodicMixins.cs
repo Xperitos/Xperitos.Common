@@ -29,32 +29,51 @@ namespace Xperitos.Common.Utils
     {
         class AsyncPeriodicScheduler : IDisposable
         {
+            public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan initialDelay, TimeSpan period, Func<CancellationToken, Task> asyncTask, bool rescheduleAsSoonAsPossible)
+            {
+                Initialize(scheduler, scheduler.Now, initialDelay, period, asyncTask, false, rescheduleAsSoonAsPossible, true);
+            }
+
             public AsyncPeriodicScheduler(IScheduler scheduler, TimeSpan period, Func<CancellationToken, Task> asyncTask, SchedulePeriodicOptions options)
+            {
+                TimeSpan initialDelay = TimeSpan.Zero;
+                var now = scheduler.Now;
+
+                if (options.HasFlag(SchedulePeriodicOptions.UseRoundIntervals))
+                    initialDelay = (now.Floor(period) - now);
+
+                Initialize(
+                    scheduler, 
+                    now, 
+                    initialDelay, 
+                    period, 
+                    asyncTask, 
+                    options.HasFlag(SchedulePeriodicOptions.ExecuteNow), 
+                    options.HasFlag(SchedulePeriodicOptions.RescheduleAsSoonAsPossible),
+                    false);
+            }
+
+            private void Initialize(IScheduler scheduler, DateTimeOffset now, TimeSpan initialDelay, TimeSpan period, Func<CancellationToken, Task> asyncTask,
+                bool forceSchedule, bool rescheduleAsSoonAsPossible, bool scheduleInDelay)
             {
                 m_scheduler = scheduler;
                 m_period = period;
                 m_asyncTask = asyncTask;
-                m_options = options;
-
-                TimeSpan initialDelay = TimeSpan.Zero;
-
-                if (options.HasFlag(SchedulePeriodicOptions.UseRoundIntervals))
-                {
-                    var now = scheduler.Now;
-                    initialDelay = (now.Floor(period) - now);
-                }
+                m_rescheduleAsSoonAsPossible = rescheduleAsSoonAsPossible;
 
                 // Do initial schedule.
-                if (options.HasFlag(SchedulePeriodicOptions.ExecuteNow))
-                    ScheduleAction(scheduler.Now + initialDelay, true);
+                if (forceSchedule)
+                    ScheduleAction(now + initialDelay, true);
+                else if (!scheduleInDelay)
+                    ScheduleAction(now + period + initialDelay);
                 else
-                    ScheduleAction(scheduler.Now + period + initialDelay);
+                    ScheduleAction(now + initialDelay);
             }
 
-            private readonly IScheduler m_scheduler;
-            private readonly TimeSpan m_period;
-            private readonly Func<CancellationToken, Task> m_asyncTask;
-            private readonly SchedulePeriodicOptions m_options;
+            private IScheduler m_scheduler;
+            private TimeSpan m_period;
+            private Func<CancellationToken, Task> m_asyncTask;
+            private bool m_rescheduleAsSoonAsPossible;
 
             private void ScheduleAction(DateTimeOffset dueTime, bool forceSchedule = false)
             {
@@ -69,7 +88,7 @@ namespace Xperitos.Common.Utils
 
                 if (dueTime < m_scheduler.Now)
                 {
-                    if ( m_options.HasFlag(SchedulePeriodicOptions.RescheduleAsSoonAsPossible) )
+                    if (m_rescheduleAsSoonAsPossible)
                         dueTime = m_scheduler.Now;
                     else
                     {
@@ -117,6 +136,15 @@ namespace Xperitos.Common.Utils
             }
 
             #endregion
+        }
+
+        /// <summary>
+        /// Perform a periodic timer for an async event. The next timer will not schedule until the task completes.
+        /// This overload accepts an initial delay before running the timer and then a periodic time for each interval.
+        /// </summary>
+        public static IDisposable SchedulePeriodicAsync(this IScheduler scheduler, TimeSpan initialDelay, TimeSpan period, Func<CancellationToken, Task> asyncTask, bool rescheduleAsSoonAsPossible = false)
+        {
+            return new AsyncPeriodicScheduler(scheduler, initialDelay, period, asyncTask, rescheduleAsSoonAsPossible);
         }
 
         /// <summary>
