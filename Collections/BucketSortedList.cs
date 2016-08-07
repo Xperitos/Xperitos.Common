@@ -635,12 +635,17 @@ namespace Xperitos.Common.Collections
         {
             var bucketKey = bucketSelector(key);
             var bucketIdx = m_buckets.Keys.BinarySearchIndexOf(bucketKey, v => v);
+
+            // Nothing found!?
+            if (bucketIdx == -1)
+                return -1;
+
             if (bucketIdx < 0)
                 bucketIdx = ~bucketIdx;
 
-            // Nothing found!?
+            // Overflow? Return the last element.
             if (bucketIdx == m_buckets.Count)
-                return -1;
+                return ~(m_buckets.Values.Sum(v => v.Count));
 
             var bucket = m_buckets.Values[bucketIdx];
 
