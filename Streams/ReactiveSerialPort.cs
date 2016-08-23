@@ -7,16 +7,17 @@ using System.Net.Sockets;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 using Splat;
 
 namespace Xperitos.Common.Streams
 {
-    public class ReactiveSerialPort : IEnableLogger, IDataStreamConsumerProducer
+    public class ReactiveSerialPort : IDataStreamConsumerProducer
     {
-        public ReactiveSerialPort(string portName, int baudRate, Parity parity, int dataBits, StopBits stopBits)
+        public ReactiveSerialPort(string portName, int baudRate, Parity parity, int dataBits, StopBits stopBits, Handshake handshake = Handshake.None)
         {
             m_serialPort = new SerialPort(portName, baudRate, parity, dataBits, stopBits);
-            m_serialPort.Handshake = Handshake.None;
+            m_serialPort.Handshake = handshake;
 
             m_serialPort.DataReceived += ( o, e ) => m_hasDataEvent.Set();
         }
@@ -31,6 +32,9 @@ namespace Xperitos.Common.Streams
         /// </summary>
         public void Start()
         {
+            if (m_cancellationToken != null && m_cancellationToken.IsCancellationRequested)
+                throw new ObjectDisposedException("Object disposed");
+
             if (m_thread != null)
                 throw new InvalidOperationException("Already started");
 
@@ -52,7 +56,7 @@ namespace Xperitos.Common.Streams
             {
                 var totalQueuedData = m_pendingTransmitData.Sum(v => v.Length);
                 if (totalQueuedData > 2048)
-                    this.Log().Warn("Total queued data on serial port exceed 2048 bytes");
+                    Log.Warning("Total queued data on serial port exceed 2048 bytes");
 
                 m_pendingTransmitData.Enqueue(data);
                 m_hasDataEvent.Set();
@@ -65,11 +69,11 @@ namespace Xperitos.Common.Streams
         /// Use this to obtain received data stream. Called from the serial port thread.
         /// Errors are transmitted on this stream as well.
         /// </summary>
-        public IObservable<byte> DataStream { get { return m_dataReceivedSubject; } }
+        public IObservable<byte> DataStream => m_dataReceivedSubject;
 
         private void ThreadProc(CancellationToken cancellation)
         {
-            this.Log().Debug("Serial port thread started");
+            Log.Debug("Serial port thread started");
 
             try
             {
@@ -81,7 +85,7 @@ namespace Xperitos.Common.Streams
                     }
                     catch (Exception e)
                     {
-                        this.Log().WarnException("Failed to open serial port. Will retry in a moment", e);
+                        Log.Warning(e, "Failed to open serial port. Will retry in a moment");
                         cancellation.WaitHandle.WaitOne(4000);
                     }
 
@@ -128,6 +132,16 @@ namespace Xperitos.Common.Streams
             }
             catch (OperationCanceledException)
             {
+                // No-op: It's OK to terminate.
+            }
+            catch (Exception e)
+            {
+                if (m_cancellationToken.IsCancellationRequested)
+                {
+                    // No-op: Ignore exceptions when terminating.
+                }
+                else
+                    m_dataReceivedSubject.OnError(e);
             }
         }
 
@@ -156,7 +170,7 @@ namespace Xperitos.Common.Streams
                 catch (IOException e)
                 {
                     // Ignore IO exceptions.
-                    this.Log().DebugException("Got IO exception. Ignoring", e);
+                    Log.Debug(e, "Got IO exception. Ignoring");
                 }
             }
         }
@@ -168,9 +182,18 @@ namespace Xperitos.Common.Streams
 
         public void Dispose()
         {
+            // Already disposed?
+            if (m_cancellationToken == null || m_cancellationToken.IsCancellationRequested)
+                return;
+
+            // Mark cancellation.
+            m_cancellationToken.Cancel();
+
             try
             {
                 // Try to dispose of the serial port regardless of anything.
+                // This will stop any blocking action we might have.
+                // NOTE: This must be done before joining the thread. Otherwise, the thread might never terminate.
                 m_serialPort.Dispose();
             }
             catch (Exception)
@@ -178,11 +201,8 @@ namespace Xperitos.Common.Streams
                 // Ignore errors.
             }
 
-            if ( m_thread == null )
-                return;
-
-            m_cancellationToken.Cancel();
-            m_thread.Join();
+            // Stop the thread.
+            m_thread?.Join();
             m_thread = null;
         }
 
