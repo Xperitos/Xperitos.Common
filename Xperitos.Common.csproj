@@ -92,8 +92,10 @@
     <Compile Include="Collections\BucketSortedList.cs" />
     <Compile Include="Collections\MultiMap.cs" />
     <Compile Include="Logging\CountingTextWriter.cs" />
+    <Compile Include="Logging\CountRollingFileSink.cs" />
+    <Compile Include="Logging\DateRollingFileSink.cs" />
     <Compile Include="Logging\LiterateConsoleSink.cs" />
-    <Compile Include="Logging\RollingFileSink.cs" />
+    <Compile Include="Logging\RollingFileSinkBase.cs" />
     <Compile Include="Logging\RollingFileSinkMixins.cs" />
     <Compile Include="Logging\SizedFileSink.cs" />
     <Compile Include="MathHelpers\Fraction.cs" />

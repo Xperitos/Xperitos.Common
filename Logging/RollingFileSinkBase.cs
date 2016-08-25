@@ -15,12 +15,12 @@ namespace Xperitos.Common.Logging
     /// <summary>
     /// Mimics the original RollingFileSink but adds the ability to rotate the log implicitly and upon startup.
     /// </summary>
-    public sealed class RollingFileSink : ILogEventSink, IDisposable
+    abstract class RollingFileSinkBase : ILogEventSink, IDisposable
     {
         public static readonly string DateFormat = "yyyyMMdd";
         public static readonly string DatePlaceHolder = "{date}";
 
-        /// <summary>Construct a <see cref="RollingFileSink"/>.</summary>
+        /// <summary>Construct a <see cref="RollingFileSinkBase"/>.</summary>
         /// <param name="pathFormat">String describing the location of the log files,
         /// with {Date} in the place of the file date. E.g. "Logs\myapp-{date}.log" will result in log
         /// files such as "Logs\myapp-2013-10-20.log", "Logs\myapp-2013-10-21.log" and so on.</param>
@@ -32,15 +32,12 @@ namespace Xperitos.Common.Logging
         /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
         /// <remarks>The file will be written using the UTF-8 character set.</remarks>
-        public RollingFileSink(string pathFormat,
-                              ITextFormatter textFormatter,
-                              long? fileSizeLimitBytes,
-                              int? retainedFileCountLimit,
-                              Encoding encoding = null)
+        public RollingFileSinkBase(
+            string pathFormat,
+            ITextFormatter textFormatter,
+            Encoding encoding = null)
         {
             if (pathFormat == null) throw new ArgumentNullException(nameof(pathFormat));
-            if (fileSizeLimitBytes.HasValue && fileSizeLimitBytes < 0) throw new ArgumentException("Negative value provided; file size limit must be non-negative", nameof(fileSizeLimitBytes));
-            if (retainedFileCountLimit.HasValue && retainedFileCountLimit < 1) throw new ArgumentException("Zero or negative value provided; retained file count limit must be at least 1", nameof(retainedFileCountLimit));
 
             pathFormat = Path.GetFullPath(pathFormat);
             var pathFormatDir = Path.GetDirectoryName(pathFormat);
@@ -53,21 +50,16 @@ namespace Xperitos.Common.Logging
             m_pathFormat = m_pathFormatPrefix + DatePlaceHolder + m_pathFormatPostfix;
 
             m_textFormatter = textFormatter;
-            m_fileSizeLimitBytes = fileSizeLimitBytes;
-            m_retainedFileCountLimit = retainedFileCountLimit;
             m_encoding = encoding ?? Encoding.UTF8;
         }
 
         private readonly ITextFormatter m_textFormatter;
-        private readonly long? m_fileSizeLimitBytes;
-        private readonly int? m_retainedFileCountLimit;
         private readonly Encoding m_encoding;
-        private readonly bool m_buffered;
         private readonly string m_pathFormat;
         private readonly string m_pathFormatPrefix;
         private readonly string m_pathFormatPostfix;
 
-        class LogFileName
+        protected class LogFileName
         {
             public LogFileName(string path, string name, DateTime date, int seq)
             {
@@ -116,7 +108,7 @@ namespace Xperitos.Common.Logging
         /// <summary>
         /// Enumerates the log files sorted by their time and sequence number in desscending order.
         /// </summary>
-        private IEnumerable<LogFileName> EnumerateFiles()
+        protected IEnumerable<LogFileName> EnumerateFiles()
         {
             var dir = Path.GetDirectoryName(m_pathFormat);
             var name = Path.GetFileName(m_pathFormat);
@@ -133,29 +125,6 @@ namespace Xperitos.Common.Logging
             catch (Exception)
             {
                 return Enumerable.Empty<LogFileName>();
-            }
-        }
-
-        void ApplyRetentionPolicy(string skipFile)
-        {
-            if (m_retainedFileCountLimit == null)
-                return;
-
-            var filesToRemove = EnumerateFiles()
-                .Skip(m_retainedFileCountLimit.Value - 1)
-                .Where(v => String.Compare(v.FullName, skipFile, StringComparison.CurrentCultureIgnoreCase) != 0)
-                .ToList();
-
-            foreach (var file in filesToRemove)
-            {
-                try
-                {
-                    File.Delete(file.FullName);
-                }
-                catch (Exception)
-                {
-                    // Where should this be logged!?
-                }
             }
         }
 
@@ -207,7 +176,7 @@ namespace Xperitos.Common.Logging
                 }
 
                 // Purge old files.
-                ApplyRetentionPolicy(newFileName);
+                ApplyRetentionPolicy(now, newFileName);
                 return;
             }
         }
@@ -232,14 +201,12 @@ namespace Xperitos.Common.Logging
                 if (m_isDisposed)
                     throw new ObjectDisposedException("Object disposed");
 
-                // Close previous file if size reached.
-                if (m_currentFile != null && m_fileSizeLimitBytes.HasValue &&
-                    m_currentFile.EstimatedLength >= m_fileSizeLimitBytes.Value)
-                {
-                    CloseFile();
-                }
+                var now = DateTime.Now;
 
-                OpenFileIfNeeded(DateTime.Now);
+                if (m_currentFile != null && ShouldRollFile(now, m_currentFile))
+                    CloseFile();
+
+                OpenFileIfNeeded(now);
 
                 // If the file was unable to be opened on the last attempt, it will remain
                 // null until the next checkpoint passes, at which time another attempt will be made to
@@ -247,6 +214,21 @@ namespace Xperitos.Common.Logging
                 m_currentFile?.Emit(logEvent);
             }
         }
+
+        /// <summary>
+        /// Return true if the current file should be closed.
+        /// </summary>
+        /// <param name="now">Time of the call</param>
+        /// <param name="currentFile"></param>
+        /// <returns></returns>
+        protected abstract bool ShouldRollFile(DateTime now, SizedFileSink currentFile);
+
+        /// <summary>
+        /// Should apply the required retention policy. Called whenever a new file is opened.
+        /// </summary>
+        /// <param name="now">Time of the call</param>
+        /// <param name="currentFilename">Holds the current filename</param>
+        protected abstract void ApplyRetentionPolicy(DateTime now, string currentFilename);
 
         public void Dispose()
         {
