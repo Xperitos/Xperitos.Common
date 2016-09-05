@@ -18,9 +18,20 @@ namespace Xperitos.Common.Utils
                 return encoding.GetString(bytes);
             }
         }
+
         public static Task<string> ReadAllAsync(this Stream stream)
         {
             return ReadAllAsync(stream, Encoding.UTF8);
+        }
+
+        public static async Task<byte[]> ReadAllBytesAsync(this Stream stream)
+        {
+            using (var mem = new System.IO.MemoryStream())
+            {
+                await stream.CopyToAsync(mem).ConfigureAwait(false);
+                var bytes = mem.ToArray();
+                return bytes;
+            }
         }
     }
 }
