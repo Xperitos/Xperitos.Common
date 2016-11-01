@@ -103,6 +103,11 @@ namespace Xperitos.Common.Networking
         }
 
         /// <summary>
+        /// Obtain the ip address of this computer.
+        /// </summary>
+        public string[] IPAddresses => (string[])Conf["IPAddress"];
+
+        /// <summary>
         /// Obtain the host name of this computer.
         /// </summary>
         public string HostName => (string)Conf["DNSHostName"];
