@@ -47,7 +47,6 @@ namespace Xperitos.Common.Utils
         }
     }
 
-    [Serializable]
     public class SimpleTimestamp : ITimestamp
     {
         public SimpleTimestamp(DateTimeOffset timestamp)
@@ -62,7 +61,6 @@ namespace Xperitos.Common.Utils
         #endregion
     }
 
-    [Serializable]
     public class SimpleTimeRange : ITimeRange
     {
         public SimpleTimeRange(DateTimeOffset timestamp, TimeSpan timeRange)
@@ -84,7 +82,6 @@ namespace Xperitos.Common.Utils
         #endregion
     }
 
-    [Serializable]
     public class PrioritizedTimeRange : SimpleTimeRange
     {
         public PrioritizedTimeRange(DateTimeOffset timestamp, TimeSpan timeRange, bool priority) : base(timestamp, timeRange)

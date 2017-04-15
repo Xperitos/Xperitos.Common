@@ -2,13 +2,12 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
-using Splat;
+using Serilog;
 
 namespace Xperitos.Common.AsyncApp.Impl
 {
     /// <summary>Provides a SynchronizationContext that's single-threaded.</summary>
-    sealed class SingleThreadSynchronizationContext : SynchronizationContext, IEnableLogger
+    sealed class SingleThreadSynchronizationContext : SynchronizationContext
     {
         /// <summary>The queue of work items.</summary>
         private readonly BlockingCollection<KeyValuePair<SendOrPostCallback, object>> m_queue =
@@ -68,13 +67,13 @@ namespace Xperitos.Common.AsyncApp.Impl
                 // Ignore cancellation originating from our token.
                 if (!ct.IsCancellationRequested)
                 {
-                    this.Log().DebugException("Unhandled exception!", e);
+                    Log.Debug(e, "Unhandled exception!");
                     throw;
                 }
             }
             catch (Exception e)
             {
-                this.Log().DebugException("Unhandled exception!", e);
+                Log.Debug(e, "Unhandled exception!");
                 throw;
             }
             finally

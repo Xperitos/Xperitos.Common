@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -67,13 +68,11 @@ namespace Xperitos.Common.Collections
             public TBucket GetBucketKey(TKey key) => m_func(key);
         }
 
-        [Serializable]
         private class BucketerBucketable<TKey, TBucket> : IBucketer<TKey, TBucket>
         {
             public TBucket GetBucketKey(TKey key) => ((IBucketable<TBucket>)key).GetBucket();
         }
 
-        [Serializable]
         private class BucketerIdentity<TKey, TBucket> : IBucketer<TKey, TBucket>
         {
             public TBucket GetBucketKey(TKey key) => default(TBucket);
@@ -81,7 +80,8 @@ namespace Xperitos.Common.Collections
 
         public static IBucketer<TKey, TBucket> Default<TKey, TBucket>()
         {
-            if ( typeof(IBucketable<TBucket>).IsAssignableFrom(typeof(TKey)) )
+            // TODO: Might not be as efficient. Consider caching GetTypeInfo calls.
+            if ( typeof(IBucketable<TBucket>).GetTypeInfo().IsAssignableFrom(typeof(TKey).GetTypeInfo()) )
                 return new BucketerBucketable<TKey, TBucket>();
 
             return new BucketerIdentity<TKey, TBucket>();
@@ -98,7 +98,6 @@ namespace Xperitos.Common.Collections
     [DebuggerTypeProxy(typeof(DictionaryDebugView<,>))]
     [DebuggerDisplay("Count = {Count}")]
     [ComVisible(false)]
-    [Serializable]
     public class BucketSortedList<TKey, TValue, TBucket> : IDictionary<TKey, TValue>, IDictionary
     {
         public BucketSortedList() : this(Bucketer.Default<TKey, TBucket>())
@@ -121,7 +120,6 @@ namespace Xperitos.Common.Collections
         private readonly SortedList<TBucket, SortedList<TKey, TValue>> m_buckets = new SortedList<TBucket, SortedList<TKey, TValue>>();
         private long m_version;
 
-        [NonSerialized]
         private readonly object m_syncRoot = new object();
 
         private readonly KeyCollection m_keys;
@@ -143,7 +141,6 @@ namespace Xperitos.Common.Collections
             set { this[(TKey) key] = (TValue) value; }
         }
 
-        [Serializable]
         private class DictionaryEnumerator : IDictionaryEnumerator
         {
             public DictionaryEnumerator(BucketSortedList<TKey, TValue, TBucket> list)
@@ -215,7 +212,6 @@ namespace Xperitos.Common.Collections
             public DictionaryEntry Entry => new DictionaryEntry(Key, Value);
         }
 
-        [Serializable]
         private class Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
         {
             public Enumerator(BucketSortedList<TKey, TValue, TBucket> list)
@@ -284,7 +280,6 @@ namespace Xperitos.Common.Collections
             object IEnumerator.Current => Current;
         }
 
-        [Serializable]
         private class KeyCollection : ICollection<TKey>, ICollection
         {
             public KeyCollection(BucketSortedList<TKey, TValue, TBucket> list)
@@ -347,7 +342,6 @@ namespace Xperitos.Common.Collections
             public bool IsReadOnly { get; } = true;
         }
 
-        [Serializable]
         private class ValueCollection : ICollection<TValue>, ICollection
         {
             public ValueCollection(BucketSortedList<TKey, TValue, TBucket> list)

@@ -13,47 +13,6 @@ namespace Xperitos.Common.Utils
             return new SynchronizationContextScheduler(context);
         }
 
-        private class SynchronizeInvoke : ISynchronizeInvoke
-        {
-            public SynchronizeInvoke(SynchronizationContext ctx)
-            {
-                m_ctx = ctx;
-            }
-
-            private readonly SynchronizationContext m_ctx;
-
-            public IAsyncResult BeginInvoke(Delegate method, object[] args)
-            {
-                var task = m_ctx.SendTaskAsync(() => Task.FromResult(method.DynamicInvoke(args)));
-                return task;
-            }
-
-            public object EndInvoke(IAsyncResult result)
-            {
-                var task = (Task<object>)result;
-                return task.Result;
-            }
-
-            public object Invoke(Delegate method, object[] args)
-            {
-                return m_ctx.Send(() => method.DynamicInvoke(args));
-            }
-
-            public bool InvokeRequired
-            {
-                get
-                {
-                    // No way of telling from the context if invoke is requred or not so default to true.
-                    return true;
-                }
-            }
-        }
-
-        public static ISynchronizeInvoke GetSynchronizeInvoke(this SynchronizationContext context)
-        {
-            return new SynchronizeInvoke(context);
-        }
-
         /// <summary>
         /// Performs the action on the specified context and blocks the current thread until a result returns.
         /// </summary>

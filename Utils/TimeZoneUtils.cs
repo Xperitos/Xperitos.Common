@@ -61,7 +61,7 @@ namespace Xperitos.Common.Utils
             var tzdbSource = NodaTime.TimeZones.TzdbDateTimeZoneSource.Default;
             var tzi = TimeZoneInfo.FindSystemTimeZoneById(windowsZoneId);
             if (tzi == null) return null;
-            var tzid = tzdbSource.MapTimeZoneId(tzi);
+            var tzid = tzdbSource.WindowsMapping.PrimaryMapping.GetValueOrDefault(tzi.Id);
             if (tzid == null) return null;
             return tzdbSource.CanonicalIdMap[tzid];
         }
@@ -75,7 +75,17 @@ namespace Xperitos.Common.Utils
 
         public static DateTime ConvertToLocal(this TimeZoneInfo tzi, DateTime time)
         {
-            return TimeZoneInfo.ConvertTimeFromUtc(time, tzi);
+            if (time.Kind == DateTimeKind.Local)
+                throw new ArgumentException("Kind property of dateTime is Local");
+
+            if (tzi == TimeZoneInfo.Utc)
+                return DateTime.SpecifyKind(time, DateTimeKind.Utc);
+
+            var utcOffset = tzi.GetUtcOffset(time);
+
+            var kind = (tzi == TimeZoneInfo.Local) ? DateTimeKind.Local : DateTimeKind.Unspecified;
+
+            return new DateTime(time.Ticks + utcOffset.Ticks, kind);
         }
 
         public static DateTimeOffset ConvertToLocal(this TimeZoneInfo tzi, DateTimeOffset time)
@@ -85,7 +95,12 @@ namespace Xperitos.Common.Utils
 
         public static DateTime ConvertToUTC(this TimeZoneInfo tzi, DateTime time)
         {
-            return TimeZoneInfo.ConvertTimeToUtc(time, tzi);
+            if (time.Kind == DateTimeKind.Utc)
+                return time;
+
+            var utcOffset = tzi.GetUtcOffset(time);
+
+            return new DateTime(time.Ticks - utcOffset.Ticks, DateTimeKind.Utc);
         }
     }
 }

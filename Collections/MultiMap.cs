@@ -8,10 +8,8 @@ namespace Xperitos.Common.Collections
     /// <summary>
     /// Maps a single key to multiple values.
     /// </summary>
-    [Serializable]
     public class MultiMap<TK, TV> : ILookup<TK, TV>
     {
-        [Serializable]
         class GroupingWrapper : List<TV>, IGrouping<TK, TV>
         {
             public GroupingWrapper(TK key)

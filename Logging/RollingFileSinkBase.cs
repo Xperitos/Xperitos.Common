@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
-using Serilog.Sinks.IOFile;
 
 namespace Xperitos.Common.Logging
 {
