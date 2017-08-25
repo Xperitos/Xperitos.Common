@@ -13,8 +13,24 @@ using JetBrains.Annotations;
 
 namespace Xperitos.Common.Utils
 {
-    public class DisposableAsyncObject : INotifyPropertyChanged, INotifyPropertyChanging, IDisposable
-    {
+	public interface IDisposablesContainer
+	{
+		/// <summary>
+		/// Holds a collection of disposable objects disposed upon exit (<see cref="DisposableMixins.ComposeDispose{T}"/>
+		/// </summary>
+		CompositeDisposable Disposables { get; }
+	}
+
+	/// <summary>
+	/// Indicates that the object has a thread affinity.
+	/// </summary>
+	public interface ISchedulerProvider
+	{
+		IScheduler Scheduler { get; }
+	}
+
+	public class DisposableAsyncObject : INotifyPropertyChanged, INotifyPropertyChanging, IDisposablesContainer, ICancelable, ISchedulerProvider
+	{
         protected DisposableAsyncObject(IScheduler scheduler)
         {
             Scheduler = scheduler;
@@ -27,19 +43,26 @@ namespace Xperitos.Common.Utils
         /// <summary>
         /// The scheduler associated with this async object.
         /// </summary>
-        public IScheduler Scheduler { get; private set; }
+        public IScheduler Scheduler { get; }
 
         /// <summary>
         /// Use this in derived classes to register disposable objects.
         /// </summary>
-        protected CompositeDisposable Disposables { get; private set; }
+        protected CompositeDisposable Disposables { get; }
 
-        /// <summary>
-        /// Watch this for service disposal event.
-        /// </summary>
-        protected CancellationToken DisposedToken { get; private set; }
+		/// <summary>
+		/// True if the object was disposed.
+		/// </summary>
+		public bool IsDisposed => Disposables.IsDisposed;
 
-        private readonly CancellationDisposable m_tokenSource;
+		/// <summary>
+		/// Watch this for service disposal event.
+		/// </summary>
+		protected CancellationToken DisposedToken { get; }
+
+		CompositeDisposable IDisposablesContainer.Disposables => Disposables;
+
+		private readonly CancellationDisposable m_tokenSource;
 
         public void Dispose()
         {
@@ -76,5 +99,5 @@ namespace Xperitos.Common.Utils
             RaisePropertyChanged(propertyName);
             return newValue;
         }
-    }
+	}
 }
