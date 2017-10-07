@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reactive.Concurrency;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
@@ -23,13 +24,14 @@ namespace Xperitos.Common.DiApp
 	/// 	}
 	/// </example>
 	/// <typeparam name="T"></typeparam>
-	public sealed class AppRunner<T> : AsyncApplication where T : IStartupBase, new()
+	public sealed class AppRunner<T> : AsyncApplication, IDiAppFlowControl
+		where T : IDiAppStartup, new()
 	{
 		private readonly T m_startup;
 		private IServiceProvider m_serviceProvider;
 		private string[] m_args;
 
-		private int m_exitCode = 0;
+		private int m_exitCode;
 
 		public AppRunner()
 		{
@@ -58,15 +60,18 @@ namespace Xperitos.Common.DiApp
 			var scheduler = this.GetScheduler();
 
 			var serviceCollection = new ServiceCollection();
+
+			//
+			// Add internal service
+			//
 			serviceCollection.AddSingleton(Log.Logger);
 			serviceCollection.AddSingleton(scheduler);
+			serviceCollection.AddSingleton<IDiAppFlowControl>(this);
 
+			// Allow the app to register services.
 			m_startup.ConfigureServices(serviceCollection);
 
 			m_serviceProvider = serviceCollection.BuildServiceProvider();
-
-			if (m_serviceProvider is IDisposable)
-				Disposables.Add((IDisposable)m_serviceProvider);
 
 			scheduler.Schedule(RunInternal);
 
@@ -77,23 +82,18 @@ namespace Xperitos.Common.DiApp
 		{
 			Log.Debug("Running");
 
-			switch (m_startup)
-			{
-				case IStartupAsync asyncStartup:
-					asyncStartup.RunAsync(m_serviceProvider).ContinueWith(t =>
-					{
-						m_exitCode = t.Result;
-						return QuitAsync();
-					});
-					break;
-				case IStartup syncStartup:
-					syncStartup.Run(m_serviceProvider, (exitCode) =>
-					{
-						m_exitCode = exitCode;
-						return QuitAsync();
-					});
-					break;
-			}
+			// Start all the runnables.
+			var runnables = m_serviceProvider.GetServices<IDiAppRunnable>();
+			foreach (var r in runnables)
+				r.Run();
+		}
+
+		public string[] StartupArguments => m_args;
+
+		public Task TerminateAsync(int exitCode = 0)
+		{
+			m_exitCode = exitCode;
+			return QuitAsync();
 		}
 	}
 }
