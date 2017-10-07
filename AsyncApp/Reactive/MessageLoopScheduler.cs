@@ -26,12 +26,6 @@ namespace Xperitos.Common.AsyncApp.Reactive
         /// <summary>
         /// Return the SyncContext for the current thread.
         /// </summary>
-        public static MessageLoopScheduler Current
-        {
-            get
-            {
-                return new MessageLoopScheduler(MessageLoop.Current);
-            }
-        }
+        public static MessageLoopScheduler Current => new MessageLoopScheduler(MessageLoop.Current);
     }
 }
