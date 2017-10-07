@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -90,10 +92,24 @@ namespace Xperitos.Common.DiApp
 
 		public string[] StartupArguments => m_args;
 
-		public Task TerminateAsync(int exitCode = 0)
+		private readonly List<Func<Task>> m_terminateHandlers = new List<Func<Task>>();
+
+		public IDisposable RegisterTerminateHandler(Func<Task> asyncHandler)
+		{
+			m_terminateHandlers.Add(asyncHandler);
+			return Disposable.Create(() => m_terminateHandlers.Remove(asyncHandler));
+		}
+
+		public async Task TerminateAsync(int exitCode = 0)
 		{
 			m_exitCode = exitCode;
-			return QuitAsync();
+
+			// Call each handler.
+			foreach (var h in m_terminateHandlers)
+				await h();
+
+			// Request to quit.
+			await QuitAsync();
 		}
 	}
 }
