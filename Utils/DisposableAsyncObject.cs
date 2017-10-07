@@ -13,14 +13,6 @@ using JetBrains.Annotations;
 
 namespace Xperitos.Common.Utils
 {
-	public interface IDisposablesContainer
-	{
-		/// <summary>
-		/// Holds a collection of disposable objects disposed upon exit (<see cref="DisposableMixins.ComposeDispose{T}"/>
-		/// </summary>
-		CompositeDisposable Disposables { get; }
-	}
-
 	/// <summary>
 	/// Indicates that the object has a thread affinity.
 	/// </summary>
