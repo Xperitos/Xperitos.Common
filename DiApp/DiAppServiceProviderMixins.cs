@@ -7,58 +7,78 @@ namespace Xperitos.Common.DiApp
 {
     public static class DiAppServiceProviderMixins
     {
-	    public static IServiceCollection AddMulti<TImpl>(this IServiceCollection collection)
+	    public static IServiceCollection AddMulti<TImpl>(this IServiceCollection collection, TImpl implementation = null)
 		    where TImpl : class
 	    {
-		    collection.AddSingleton<TImpl>();
+		    if (implementation == null)
+			    collection.AddSingleton<TImpl>();
+		    else
+			    collection.AddSingleton<TImpl>(implementation);
 
-		    return collection;
+
+			return collection;
 	    }
 
-	    public static IServiceCollection AddMulti<TIface1, TImpl>(this IServiceCollection collection)
+	    public static IServiceCollection AddMulti<TIface1, TImpl>(this IServiceCollection collection, TImpl implementation = null)
 		    where TImpl : class, TIface1
 		    where TIface1 : class
 	    {
-		    collection.AddSingleton<TImpl>();
-		    collection.AddSingleton<TIface1>(p => p.GetRequiredService<TImpl>());
+		    if (implementation == null)
+			    collection.AddSingleton<TImpl>();
+		    else
+			    collection.AddSingleton<TImpl>(implementation);
+
+			collection.AddSingleton<TIface1>(p => p.GetRequiredService<TImpl>());
 
 		    return collection;
 	    }
 
-	    public static IServiceCollection AddMulti<TIface1, TIface2, TImpl>(this IServiceCollection collection)
+	    public static IServiceCollection AddMulti<TIface1, TIface2, TImpl>(this IServiceCollection collection, TImpl implementation = null)
 		    where TImpl : class, TIface1, TIface2
 		    where TIface1 : class
 		    where TIface2 : class
 	    {
-		    collection.AddSingleton<TImpl>();
-		    collection.AddSingleton<TIface1>(p => p.GetRequiredService<TImpl>());
+		    if (implementation == null)
+			    collection.AddSingleton<TImpl>();
+		    else
+			    collection.AddSingleton<TImpl>(implementation);
+
+			collection.AddSingleton<TIface1>(p => p.GetRequiredService<TImpl>());
 		    collection.AddSingleton<TIface2>(p => p.GetRequiredService<TImpl>());
 
 			return collection;
 	    }
 
-	    public static IServiceCollection AddMulti<TIface1, TIface2, TIface3, TImpl>(this IServiceCollection collection)
+	    public static IServiceCollection AddMulti<TIface1, TIface2, TIface3, TImpl>(this IServiceCollection collection, TImpl implementation = null)
 		    where TImpl : class, TIface1, TIface2, TIface3
 		    where TIface1 : class
 		    where TIface2 : class
 		    where TIface3 : class
 	    {
-		    collection.AddSingleton<TImpl>();
-		    collection.AddSingleton<TIface1>(p => p.GetRequiredService<TImpl>());
+		    if (implementation == null)
+			    collection.AddSingleton<TImpl>();
+		    else
+			    collection.AddSingleton<TImpl>(implementation);
+
+			collection.AddSingleton<TIface1>(p => p.GetRequiredService<TImpl>());
 		    collection.AddSingleton<TIface2>(p => p.GetRequiredService<TImpl>());
 			collection.AddSingleton<TIface3>(p => p.GetRequiredService<TImpl>());
 
 			return collection;
 	    }
 
-	    public static IServiceCollection AddMulti<TIface1, TIface2, TIface3, TIface4, TImpl>(this IServiceCollection collection)
+	    public static IServiceCollection AddMulti<TIface1, TIface2, TIface3, TIface4, TImpl>(this IServiceCollection collection, TImpl implementation = null)
 		    where TImpl : class, TIface1, TIface2, TIface3, TIface4
 		    where TIface1 : class
 		    where TIface2 : class
 		    where TIface3 : class
 		    where TIface4 : class
 	    {
-			collection.AddSingleton<TImpl>();
+			if ( implementation == null )
+				collection.AddSingleton<TImpl>();
+			else
+			    collection.AddSingleton<TImpl>(implementation);
+
 		    collection.AddSingleton<TIface1>(p => p.GetRequiredService<TImpl>());
 		    collection.AddSingleton<TIface2>(p => p.GetRequiredService<TImpl>());
 			collection.AddSingleton<TIface3>(p => p.GetRequiredService<TImpl>());
