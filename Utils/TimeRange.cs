@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,10 +16,10 @@ namespace Xperitos.Common.Utils
         DateTimeOffset Timestamp { get; }
     }
 
-    /// <summary>
-    /// Provides a timestamp and a duration.
-    /// </summary>
-    public interface ITimeRange : ITimestamp
+	/// <summary>
+	/// Provides a timestamp and a duration.
+	/// </summary>
+	public interface ITimeRange : ITimestamp
     {
         TimeSpan TimeRange { get; }
     }
@@ -28,15 +29,9 @@ namespace Xperitos.Common.Utils
         /// <summary>
         /// Return the current timestamp.
         /// </summary>
-        public static ITimestamp Now
-        {
-            get
-            {
-                return new SimpleTimestamp(DateTimeOffset.Now);
-            }
-        }
+        public static ITimestamp Now => new SimpleTimestamp(DateTimeOffset.Now);
 
-        public static ITimestamp Create(DateTimeOffset time)
+	    public static ITimestamp Create(DateTimeOffset time)
         {
             return new SimpleTimestamp(time);
         }
