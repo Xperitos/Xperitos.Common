@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
@@ -105,7 +106,7 @@ namespace Xperitos.Common.DiApp
 			m_exitCode = exitCode;
 
 			// Call each handler.
-			foreach (var h in m_terminateHandlers)
+			foreach (var h in m_terminateHandlers.ToList())
 				await h();
 
 			// Request to quit.
