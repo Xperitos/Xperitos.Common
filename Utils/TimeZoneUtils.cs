@@ -39,12 +39,31 @@ namespace Xperitos.Common.Utils
                 ? links.Concat(new[] { tzdbSource.CanonicalIdMap[ianaZoneId] })
                 : links;
 
-            // map the windows zone
-            var mappings = tzdbSource.WindowsMapping.MapZones;
-            var item = mappings.FirstOrDefault(x => x.TzdbIds.Any(possibleZones.Contains));
-            if (item == null) return null;
+            if (OSDetector.CurrentOS == OSDetector.OSFamily.Windows)
+            {
+                // map the windows zone
+                var mappings = tzdbSource.WindowsMapping.MapZones;
+                var item = mappings.FirstOrDefault(x => x.TzdbIds.Any(possibleZones.Contains));
+                if (item == null)
+                    return null;
 
-            return TimeZoneInfo.FindSystemTimeZoneById(item.WindowsId);
+                return TimeZoneInfo.FindSystemTimeZoneById(item.WindowsId);
+            } 
+            else
+            {
+                return possibleZones.Select(id =>
+                {
+                    try
+                    {
+                        return TimeZoneInfo.FindSystemTimeZoneById(id);
+                    }
+                    catch (TimeZoneNotFoundException)
+                    {
+                        return null;
+                    }
+                })
+                .FirstOrDefault(tz => tz != null);
+            }
         }
 
         /// <summary>
