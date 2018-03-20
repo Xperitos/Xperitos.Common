@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Xperitos.Common.Utils
 {
     /// <summary>
-    /// A queue that performs the enqueued task one after another.
+    /// A queue that performs the enqueued tasks one after another.
     /// </summary>
     /// <remarks>Public functions are thread-safe</remarks>
     public class TasksQueue : IDisposable
@@ -18,7 +18,7 @@ namespace Xperitos.Common.Utils
         {
             m_ctx = ctx ?? SynchronizationContext.Current;
 
-            m_ctx.Post(async () => await PumpTasksAsync());
+            m_ctx.Post(() => PumpTasksAsync().Forget());
         }
 
         private async Task PumpTasksAsync()
@@ -146,7 +146,24 @@ namespace Xperitos.Common.Utils
 
         private readonly CancellationDisposable m_disposable = new CancellationDisposable();
 
-        public void Dispose()
+	    /// <summary>
+	    /// Returns the number of pending tasks.
+	    /// </summary>
+	    public int PendingCount
+	    {
+		    get
+		    {
+			    lock (m_pendingTasks)
+				    return m_pendingTasks.Count;
+		    }
+	    }
+
+		/// <summary>
+		/// True if there's work currently running or pending.
+		/// </summary>
+	    public bool IsActive => m_countSemaphore.CurrentCount > 0 || m_taskRunningSemaphore.CurrentCount == 0;
+
+	    public void Dispose()
         {
             m_disposable.Dispose();
         }
