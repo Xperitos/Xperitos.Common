@@ -22,7 +22,7 @@ namespace Xperitos.Common.AsyncApp
         /// <summary>Runs <paramref name="asyncMethod"/> on the current thread.</summary>
         public static void Run(Func<Task> asyncMethod)
         {
-            Run(() => asyncMethod().ContinueWith(t => true));
+            Run(() => asyncMethod().ContinueWith(t => t.IsFaulted ? throw t.Exception : true));
         }
 
         /// <summary>Runs <paramref name="asyncMethod"/> on the current thread.</summary>
@@ -55,6 +55,11 @@ namespace Xperitos.Common.AsyncApp
                     newContext.RunOnCurrentThread();
 
                     // Force the task into completion state.
+	                if (!task.IsCompleted)
+		                task.Wait();
+
+	                if (task.IsFaulted)
+		                throw task.Exception;
                     return task.Result;
                 }
                 finally
