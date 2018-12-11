@@ -46,21 +46,29 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static Task<T> SendTaskAsync<T>(this SynchronizationContext context, Func<Task<T>> action)
         {
+	        var exeCtx = ExecutionContext.Capture();
+
             var result = new TaskCompletionSource<T>();
             context.Post(
-                async (taskCompletion) =>
-                {
-                    var tcs = (TaskCompletionSource<T>)taskCompletion;
-                    try
-                    {
-                        tcs.SetResult(await action().ConfigureAwait(false));
-                    }
-                    catch (Exception e)
-                    {
-                        tcs.SetException(e);
-                    }
-                },
-                result);
+	            () =>
+	            {
+		            async void Run(TaskCompletionSource<T> tcs)
+		            {
+			            try
+			            {
+				            tcs.SetResult(await action().ConfigureAwait(false));
+			            }
+			            catch (Exception e)
+			            {
+				            tcs.SetException(e);
+			            }
+		            }
+
+		            if (exeCtx == null)
+			            Run(result);
+					else
+						ExecutionContext.Run(exeCtx, _ => { Run(result); }, null);
+	            });
             return result.Task;
         }
 
@@ -69,21 +77,31 @@ namespace Xperitos.Common.Utils
         /// </summary>
         public static Task<T> SendActionAsync<T>(this SynchronizationContext context, Func<T> action)
         {
-            var tcs = new TaskCompletionSource<T>();
+	        var exeCtx = ExecutionContext.Capture();
+
+            var result = new TaskCompletionSource<T>();
             context.Post(() =>
             {
-                try
-                {
-                    var result = action();
-                    tcs.SetResult(result);
-                }
-                catch (Exception e)
-                {
-                    tcs.SetException(e);
-                }
+	            void Run(TaskCompletionSource<T> tcs)
+	            {
+		            try
+		            {
+			            var actionResult = action();
+			            tcs.SetResult(actionResult);
+		            }
+		            catch (Exception e)
+		            {
+			            tcs.SetException(e);
+		            }
+	            }
+
+				if (exeCtx == null)
+		            Run(result);
+	            else
+		            ExecutionContext.Run(exeCtx, _ => { Run(result); }, null);
             });
 
-            return tcs.Task;
+            return result.Task;
         }
 
         /// <summary>
