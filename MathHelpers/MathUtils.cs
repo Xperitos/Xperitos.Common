@@ -66,5 +66,32 @@ namespace Xperitos.Common.MathHelpers
             }
             return ret;
         }
-    }
+
+		/// <summary>
+		/// Calculate the 50th percentile
+		/// </summary>
+		/// <param name="values"></param>
+		/// <returns></returns>
+		public static double Calc50Percentile(List<double> values)
+		{
+			values.Sort();
+
+			if (values.Count % 2 == 0)
+			{
+				// In case of even number of items in value
+				var val1 = values[values.Count / 2];
+				var val2 = values[(values.Count / 2) + 1];
+
+				return (val1 + val2) / 2;
+			}
+			else
+			{
+				// In case of odd number of items in value
+				var val = values[(values.Count + 1) / 2];
+
+				return val;
+			}
+		}
+
+	}
 }
