@@ -38,21 +38,29 @@ namespace Xperitos.Common.MathHelpers
         {
             return a * b / GCD(a, b);
         }
-        
-        /// <summary>
-        /// Calculates the std
-        /// </summary>
-        /// <param name="values">Values for calculation</param>
-        /// <returns></returns>
-        public static double CalculateStdDev(IEnumerable<double> values)
+
+		/// <summary>
+		/// Calculates the std
+		/// </summary>
+		/// <param name="values">Values for calculation</param>
+		/// <param name="average">Optional average value if it was already calculated (providing it 
+		/// will make the calculation faster).</param>
+		/// <returns></returns>
+		public static double CalculateStdDev(IEnumerable<double> values, double? average = null)
         {
-            double ret = 0;
+			//Compute/get the Average      
+			double avg;
+			if (average.HasValue)
+				avg = average.Value;
+			else
+				avg = values.Average();
+
+
+			double ret = 0;
             if (values.Count() > 0)
             {
-                //Compute the Average      
-                double avg = values.Average();
                 //Perform the Sum of (value-avg)_2_2      
-                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+                double sum = values.Sum(d => (d-avg)*(d-avg));
                 //Put it all together      
                 ret = Math.Sqrt((sum) / (values.Count() - 1));
             }
