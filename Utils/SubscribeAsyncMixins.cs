@@ -10,13 +10,26 @@ namespace Xperitos.Common.Utils
 {
     public static class SubscribeAsyncMixins
     {
-        /// <summary>
-        /// Serialize the calls to the action callback - the action call will be re-scheduled only once if multiple events are received while it was still running.
-        /// </summary>
-        /// <param name="observable">Sequence of events</param>
-        /// <param name="action">Async action to run for each event.</param>
-        /// <param name="scheduler">Where the action execution takes place</param>
-        public static IDisposable SubscribeSingleAsync(this IObservable<Unit> observable, Func<CancellationToken, Task> action, IScheduler scheduler)
+	    /// <summary>
+	    /// Serialize the calls to the action callback - the action call will be re-scheduled only once if multiple events are received while it was still running.
+	    /// </summary>
+	    /// <param name="observable">Sequence of events</param>
+	    /// <param name="action">Async action to run for each event.</param>
+	    /// <param name="scheduler">Where the action execution takes place</param>
+	    public static IDisposable SubscribeSingleAsync(this IObservable<Unit> observable, Func<CancellationToken, Task> action, IScheduler scheduler)
+	    {
+		    return SubscribeSingleAsync(observable, action, null, scheduler);
+	    }
+
+
+	    /// <summary>
+	    /// Serialize the calls to the action callback - the action call will be re-scheduled only once if multiple events are received while it was still running.
+	    /// </summary>
+	    /// <param name="observable">Sequence of events</param>
+	    /// <param name="action">Async action to run for each event.</param>
+	    /// <param name="onError">Function to run when exception occurred</param>
+	    /// <param name="scheduler">Where the action execution takes place</param>
+	    public static IDisposable SubscribeSingleAsync(this IObservable<Unit> observable, Func<CancellationToken, Task> action, Action<Exception> onError, IScheduler scheduler)
         {
             if (scheduler == null)
                 scheduler = Scheduler.Default;
@@ -30,23 +43,30 @@ namespace Xperitos.Common.Utils
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    try
-                    {
-                        // Wait for a request to run the action.
-                        await Task.Run(() => runActionEvent.Wait(ct), ct);
+	                try
+	                {
+		                // Wait for a request to run the action.
+		                await Task.Run(() => runActionEvent.Wait(ct), ct);
 
-                        // Clear the event before the action is executed.
-                        runActionEvent.Reset();
+		                // Clear the event before the action is executed.
+		                runActionEvent.Reset();
 
-                        // Perform the action.
-                        await action(ct);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Catch cancelled exception (but only if it's ours).
-                        if (!ct.IsCancellationRequested)
-                            throw;
-                    }
+		                // Perform the action.
+		                await action(ct);
+	                }
+	                catch (OperationCanceledException)
+	                {
+		                // Catch cancelled exception (but only if it's ours).
+		                if (!ct.IsCancellationRequested)
+			                throw;
+	                }
+	                catch (Exception e)
+	                {
+		                if (onError != null)
+			                onError(e);
+
+			            throw;
+	                }
 
                     // Yield to the scheduler.
                     await innerScheduler.Yield();
