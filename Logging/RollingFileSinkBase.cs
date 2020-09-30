@@ -88,7 +88,8 @@ namespace Xperitos.Common.Logging
                     fullName.Length - m_pathFormatPrefix.Length - m_pathFormatPostfix.Length);
 
                 var parts = data.Split('_');
-                DateTime time = DateTime.ParseExact(parts[0], DateFormat, null);
+				string datePart = new String(parts[0].Where(Char.IsDigit).ToArray()); // Extract digits only from parts[0] string
+				DateTime time = DateTime.ParseExact(datePart, DateFormat, null);
                 var seq = parts.Length > 1 ? int.Parse(parts[1]) : 0;
 
                 return new LogFileName(path, name, time, seq);
