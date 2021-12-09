@@ -44,7 +44,7 @@ namespace Xperitos.Common.Utils
 		/// <returns></returns>
 		private bool IsItemFitBucket(double item)
 		{
-			double newAvg = (Average + item) / (Items.Count + 1);
+			double newAvg = (Average*Items.Count + item) / (Items.Count + 1);
 			if (Math.Abs(item - newAvg) <= Tolerance)
 				return true;
 			return false;
