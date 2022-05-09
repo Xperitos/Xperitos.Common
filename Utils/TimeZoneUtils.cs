@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -121,5 +122,41 @@ namespace Xperitos.Common.Utils
 
             return new DateTime(time.Ticks - utcOffset.Ticks, DateTimeKind.Utc);
         }
-    }
+
+		/// <summary>
+		/// Get a 'date time offset', check if it is an ambigous one (means that it falls in the hour of change from PDT to PST)
+		/// If it is the case, use the recorded offset in order to convert this date to UTC
+		/// The recorded offset is the offset recorded on the execution time of the code and it "knows" at the moment
+		/// Of the record if 'now' we are before or after the change from PDT to PST
+		/// </summary>
+		/// <param name="dateTimeOffset"></param>
+		/// <param name="recordedOffset"></param>
+		/// <param name="timeZoneInfo"></param>
+		/// <returns></returns>
+		public static DateTimeOffset FixIfAmbiguous(this DateTimeOffset dateTimeOffset, TimeSpan recordedOffset, TimeZoneInfo timeZoneInfo)
+		{
+			// if it's not ambigous, nothing to do with it.
+			if (!timeZoneInfo.IsAmbiguousTime(dateTimeOffset))
+				return dateTimeOffset;
+
+			// if the recorded offset is equal to the dateTimeOffset, nothing to do.
+			if (TimeSpan.Equals(dateTimeOffset.Offset, recordedOffset))
+			{
+				Log.Verbose("Ambiguous time: {ambiguousTime} offset: {ambiguousTimeOffset} is equal to recorded offset: {offset}, probably running after the PDT to PST change, nothing to do.", dateTimeOffset.LocalDateTime.ToString(), dateTimeOffset.Offset.ToString(), recordedOffset.ToString());
+				return dateTimeOffset;
+			}
+
+			// log the required fix
+			Log.Verbose("Fixing ambiguous time: {ambiguousTime}, with offset: {offSet}, while recordedOffset is: {recordedOffset}", dateTimeOffset.LocalDateTime.ToString(), dateTimeOffset.Offset.ToString(), recordedOffset.ToString());
+
+			// fix the ambiguous time
+			var fixedAmbiguousTime = new DateTimeOffset(dateTimeOffset.Year, dateTimeOffset.Month, dateTimeOffset.Day, dateTimeOffset.Hour, dateTimeOffset.Minute, dateTimeOffset.Second, recordedOffset);
+
+			// log the fixed result
+			Log.Verbose("Fixed ambiguous time: {fixedAmbiguousTime}, to use offset: {offset}", fixedAmbiguousTime.LocalDateTime.ToString(), fixedAmbiguousTime.Offset.ToString());
+
+			// return result
+			return fixedAmbiguousTime;
+		}
+	}
 }
